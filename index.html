@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Om's Math Videos</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#1a1a2e;color:#eee;overflow:hidden;height:100vh}
+.app{display:grid;grid-template-rows:auto 1fr;height:100vh}
+header{background:#16213e;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid #0f3460}
+header h1{font-size:1.4em;color:#e94560}
+header .info{font-size:.85em;color:#999}
+.main{display:grid;grid-template-columns:1fr 360px;overflow:hidden}
+@media(max-width:900px){.main{grid-template-columns:1fr}.sidebar{display:none}.sidebar.open{display:flex;position:fixed;top:0;left:0;right:0;bottom:0;z-index:100;background:#16213e}.mob-toggle{display:block!important}}
+.player-area{display:flex;flex-direction:column;background:#000}
+.video-wrap{position:relative;width:100%;padding-top:56.25%;background:#000}
+.video-wrap iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0}
+.yt-block-top{position:absolute;top:0;left:0;right:0;height:42px;z-index:10;cursor:default}
+.yt-block-bot{position:absolute;bottom:0;left:0;width:120px;height:36px;z-index:10;cursor:default}
+.controls{display:flex;align-items:center;gap:12px;padding:12px 20px;background:#16213e;flex-wrap:wrap}
+.controls button{background:#0f3460;color:#fff;border:none;padding:8px 18px;border-radius:8px;cursor:pointer;font-size:.95em;transition:background .2s}
+.controls button:hover{background:#e94560}
+.controls button.active{background:#e94560}
+.now-playing{flex:1;min-width:200px;font-size:.9em;color:#ccc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mob-toggle{display:none;background:#e94560!important;font-size:1.1em!important}
+.sidebar{display:flex;flex-direction:column;background:#16213e;border-left:2px solid #0f3460;overflow:hidden}
+.cat-bar{padding:10px;border-bottom:1px solid #0f3460;max-height:200px;overflow-y:auto}
+.cat-bar h3{font-size:.8em;color:#e94560;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px}
+.cat-pills{display:flex;flex-wrap:wrap;gap:4px}
+.cat-pill{font-size:.7em;padding:3px 8px;border-radius:12px;border:1px solid #0f3460;background:transparent;color:#aaa;cursor:pointer;transition:all .2s}
+.cat-pill:hover{border-color:#e94560;color:#fff}
+.cat-pill.active{background:#e94560;border-color:#e94560;color:#fff}
+.video-list{flex:1;overflow-y:auto;padding:4px 0}
+.video-list::-webkit-scrollbar{width:6px}
+.video-list::-webkit-scrollbar-thumb{background:#0f3460;border-radius:3px}
+.vid-item{display:flex;align-items:center;gap:10px;padding:8px 12px;cursor:pointer;border-bottom:1px solid #0f3460;transition:background .15s}
+.vid-item:hover{background:#0f3460}
+.vid-item.playing{background:#e94560;color:#fff}
+.vid-item .num{font-size:.75em;color:#666;min-width:24px;text-align:right}
+.vid-item.playing .num{color:#fff}
+.vid-item .meta{flex:1;overflow:hidden}
+.vid-item .title{font-size:.82em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vid-item .cat{font-size:.65em;color:#888;margin-top:2px}
+.vid-item.playing .cat{color:#fcc}
+.vid-item .dur{font-size:.7em;color:#666;min-width:32px;text-align:right}
+.vid-item.playing .dur{color:#fcc}
+.search-box{padding:8px 10px;border-bottom:1px solid #0f3460}
+.search-box input{width:100%;padding:6px 10px;border-radius:6px;border:1px solid #0f3460;background:#1a1a2e;color:#eee;font-size:.85em;outline:none}
+.search-box input:focus{border-color:#e94560}
+.count-bar{padding:6px 12px;font-size:.7em;color:#888;border-bottom:1px solid #0f3460;text-align:center}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>Om's Math Videos</h1>
+    <span class="info" id="headerInfo">335 videos</span>
+  </header>
+  <div class="main">
+    <div class="player-area">
+      <div class="video-wrap" id="videoWrap">
+        <div class="yt-block-top"></div>
+        <div id="playerTarget"></div>
+        <div class="yt-block-bot"></div>
+      </div>
+      <div class="controls">
+        <button onclick="playPrev()">Prev</button>
+        <button onclick="togglePlay()" id="playBtn">Pause</button>
+        <button onclick="playNext()">Next</button>
+        <button onclick="shuffle()" id="shuffleBtn">Shuffle</button>
+        <button onclick="toggleAutoplay()" id="autoBtn" class="active">Auto-play ON</button>
+        <button class="mob-toggle" onclick="toggleSidebar()">Playlist</button>
+        <div class="now-playing" id="nowPlaying"></div>
+      </div>
+    </div>
+    <div class="sidebar" id="sidebar">
+      <div class="search-box"><input type="text" id="searchInput" placeholder="Filter videos..." oninput="filterList()"></div>
+      <div class="cat-bar">
+        <h3>Categories</h3>
+        <div class="cat-pills" id="catPills"></div>
+      </div>
+      <div class="count-bar" id="countBar">335 videos</div>
+      <div class="video-list" id="videoList"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const VIDEOS=[{"id":"iLXNBiGJAGs","title":"\"Math Whiz!\" Addition Song - Danny Go!","cat":"Addition Songs","dur":3},{"id":"8cR_1Qi-tP4","title":"Meet the Math Facts - Addition & Subtraction Level 1","cat":"Addition Songs","dur":59},{"id":"0KPT5EaXUcA","title":"Numberblocks - All the Sums | Learn to Add and Subtract","cat":"Addition Songs","dur":18},{"id":"a4FXl4zb3E4","title":"Place Value Song For Kids | Ones, Tens, & Hundreds","cat":"Addition Songs","dur":3},{"id":"igcoDFokKzU","title":"Addition and Subtraction with Dinosaurs","cat":"Addition Songs","dur":24},{"id":"vR4pVGNisZA","title":"Adding Up To 10 | Bumble Nums Counting Song","cat":"Addition Songs","dur":3},{"id":"VScM8Z8Jls0","title":"Addition by Counting on - Grade 1","cat":"Addition Songs","dur":4},{"id":"G0Di8DP9f8w","title":"Addition! | Level 1 | Numberblocks","cat":"Addition Songs","dur":53},{"id":"k9ZT2YWkLBI","title":"Meet the Math Facts - Addition & Subtraction Level 3","cat":"Addition Facts","dur":74},{"id":"1SmwBwhvbFk","title":"Meet the Math Facts - Addition & Subtraction Level 2","cat":"Addition Facts","dur":63},{"id":"mjlsSYLLOSE","title":"Basic Math Addition For Kids | Noodle Kidz","cat":"Addition Facts","dur":7},{"id":"7J1OkxuyLD0","title":"Adding & Subtracting! | Mini Math Movies | Scratch Garden","cat":"Adding 3 Numbers","dur":7},{"id":"VzdEhL44MRQ","title":"Addition of Three Digit Numbers | Maths For Class 2","cat":"Adding 3 Numbers","dur":9},{"id":"l7pRTRcR7Yo","title":"Learn Addition and Subtraction Level 3 | Numberblocks","cat":"Adding 3 Numbers","dur":76},{"id":"mAvuom42NyY","title":"Math Antics - Multi-Digit Addition","cat":"Adding 3 Numbers","dur":6},{"id":"G2gUDPVEa6s","title":"Addition Special! | Level 2 | Numberblocks","cat":"Adding 3 Numbers","dur":30},{"id":"Q9sLfMrH8_w","title":"Double-Digit Addition for Kids","cat":"Adding 3 Numbers","dur":15},{"id":"cE-yrJv4TEs","title":"Addition with Regrouping Song | 3-Digit Addition","cat":"Adding 3 Numbers","dur":3},{"id":"KgZIXq04ee8","title":"Grade 2 Math: Addition Solution","cat":"Adding 3 Numbers","dur":1},{"id":"c8_t_E5cG38","title":"Math Whiz! (Subtraction Song) | Danny Go!","cat":"Subtraction Basics","dur":3},{"id":"mcl1uzbn3QQ","title":"Numberblocks - Subtracting with the Numberblocks!","cat":"Subtraction Basics","dur":18},{"id":"i-ojOPOODO0","title":"Numberblocks - Addition and Subtraction!","cat":"Subtraction Basics","dur":19},{"id":"t6eqTn9Sapg","title":"Learn Math | Subtracting with Monster Trucks","cat":"Subtraction Basics","dur":5},{"id":"ebQX7uQ6Zak","title":"Learn Addition and Subtraction Level 1 | Numberblocks","cat":"Subtraction Basics","dur":84},{"id":"TGXIZIe3Nzc","title":"Learn Subtraction | 30 Minutes | Numberblocks","cat":"Subtraction Basics","dur":31},{"id":"Y6M89-6106I","title":"Math Antics - Multi-Digit Subtraction","cat":"Subtraction Regrouping","dur":6},{"id":"1jCqMKdBE5c","title":"Subtraction With Borrowing | Maths For Class 2","cat":"Subtraction Regrouping","dur":3},{"id":"nku3jVLbPBw","title":"Subtraction With Regrouping Song","cat":"Subtraction Regrouping","dur":1},{"id":"Buyaqe_L5-Y","title":"Subtraction with Regrouping - Math Video for 2nd Grade","cat":"Subtraction Regrouping","dur":2},{"id":"qKxQ33KcRWQ","title":"Double-Digit Subtraction for Kids","cat":"Subtraction Regrouping","dur":11},{"id":"ugmE47qWofc","title":"How to Borrow in Subtraction! ...for Kids!","cat":"Subtraction Regrouping","dur":6},{"id":"dAufhZ594V8","title":"Grade 2 Math - Subtracting three-digit numbers","cat":"Subtraction Regrouping","dur":14},{"id":"QkPa9V2wtZs","title":"When You Subtract with a Pirate","cat":"Subtraction Songs","dur":4},{"id":"qM7B2nwpV1M","title":"Subtraction for kids - Learn how to subtract","cat":"Subtraction Songs","dur":13},{"id":"q7_j76OwRD4","title":"Meet the Math Drills - Subtraction (FULL MOVIE)","cat":"Subtraction Songs","dur":111},{"id":"pwQKugrFmJQ","title":"Subtraction Song for kids | Jack Hartmann","cat":"Subtraction Songs","dur":2},{"id":"s3jP0vnFSxE","title":"Jessie Solving Word Problems | ABCmouse","cat":"Subtraction Word Problems","dur":4},{"id":"XI6vDDO0-j4","title":"Addition Special Level 5 | 30 min | Numberblocks","cat":"Subtraction Word Problems","dur":30},{"id":"W_GH5z8Nuoc","title":"Multiplication for Kids - Best Times Tables Tricks! | Numberblocks","cat":"Multiplication Basics","dur":88},{"id":"FG18571ruVQ","title":"Multiplication for Kids - All Levels | Numberblocks","cat":"Multiplication Basics","dur":45},{"id":"z6o6oWa9M10","title":"Multiplication for Kids Level 10 | Numberblocks","cat":"Multiplication Basics","dur":9},{"id":"JxvX-bytrUU","title":"Numberblocks | Times Tables Songs 1-10","cat":"Multiplication Basics","dur":4},{"id":"OQjkFQAIOck","title":"Maths Quiz for kids | Multiplication table Quiz","cat":"Multiplication Basics","dur":15},{"id":"6s09a6gag7g","title":"Meet the Math Facts - Multiplication & Division Level 1","cat":"Multiplication Basics","dur":93},{"id":"EgjCLhoI9Mk","title":"Multiplication Mash Up - Learn Your Multiplication Facts!","cat":"Times Tables Songs","dur":7},{"id":"wh0hTgmp3AU","title":"Numberblocks | Five Times Table Song","cat":"Times Tables Songs","dur":2},{"id":"zGxsCk2ppcI","title":"Ten Times Table Song | Numberblocks","cat":"Times Tables Songs","dur":4},{"id":"uFmbB2vileA","title":"Three Times Table Counting Song | Numberblocks","cat":"Times Tables Songs","dur":4},{"id":"9XzfQUXqiYY","title":"Three Times Table Song (Cover of Uptown Funk)","cat":"Times Tables Songs","dur":3},{"id":"dzVyBQ5uTbo","title":"3 Times Tables - Have Fun Learning!","cat":"Times Tables Songs","dur":2},{"id":"KPffpuHYIhc","title":"Five Times Table Song | Numberblocks","cat":"Times Tables Songs","dur":4},{"id":"pEbjmAsrOic","title":"Learn multiplication | 30 Minutes | Numberblocks","cat":"Multiplication Tricks","dur":27},{"id":"EI2qZC1vUGk","title":"The Fastest Way to Learn Multiplication Facts","cat":"Multiplication Tricks","dur":6},{"id":"1wAr2Kbe-GM","title":"How to Calculate Faster than a Calculator","cat":"Multiplication Tricks","dur":5},{"id":"oPINS56lDes","title":"Learn Multiplication Songs for Children","cat":"Multiplication Tricks","dur":13},{"id":"x2Nr-f02AUY","title":"Trick To Remember Your Times Table (6 to 10)","cat":"Multiplication Tricks","dur":3},{"id":"v1Ih3-mDPUk","title":"How to Easily Memorize the Multiplication Table","cat":"Multiplication Tricks","dur":3},{"id":"fYd_fqTpBfk","title":"Learn 2 to 9 Times Multiplication Tricks","cat":"Multiplication Tricks","dur":23},{"id":"PZjIT9CH6bM","title":"2-Digit by 2-Digit Multiplication | Math with Mr. J","cat":"Multiplication Tricks","dur":4},{"id":"EemjeA2Djjw","title":"The Counting by Fives Song | Scratch Garden","cat":"Multiply by 2 5 10","dur":2},{"id":"GvTcpfSnOMQ","title":"The Counting by Twos Song | Scratch Garden","cat":"Multiply by 2 5 10","dur":1},{"id":"5FaBDqOmiyI","title":"Count by fives | Skip counting | The Singing Walrus","cat":"Multiply by 2 5 10","dur":2},{"id":"o0v5o6YbYro","title":"Multiply by 2 Song | The Singing Walrus","cat":"Multiply by 2 5 10","dur":4},{"id":"AUL_4lzT06I","title":"Two Times Table Song | Numberblocks","cat":"Multiply by 2 5 10","dur":4},{"id":"xJ5w5WQBhO0","title":"Second Grade Math made fun! | Division | Numberblocks","cat":"Division","dur":13},{"id":"rGMecZ_aERo","title":"Division for Kids | Homeschool Pop","cat":"Division","dur":8},{"id":"qZ2R1tbUZaw","title":"Learn Division | 40 Minutes | Numberblocks","cat":"Division","dur":40},{"id":"oF2fITujB4c","title":"Division Song For Kids | Repeated Subtraction","cat":"Division","dur":3},{"id":"irfMCIgFJZY","title":"What is Division? Grade 3","cat":"Division","dur":2},{"id":"J0lsX2d7y08","title":"Division Song - My Dog Division","cat":"Division","dur":4},{"id":"T3h1HUVHLJo","title":"Divisions - Learn to Divide with Monkey Friends","cat":"Division","dur":3},{"id":"fgoUVDoHx5M","title":"How to Share Equally - Introduction to Division","cat":"Division","dur":3},{"id":"HdU_rf7eMTI","title":"Math Antics - Long Division with 2-Digit Divisors","cat":"Long Division","dur":13},{"id":"KGMf314LUc0","title":"Math Antics - Basic Division","cat":"Long Division","dur":9},{"id":"LGqBQrUYua4","title":"Math Antics - Long Division","cat":"Long Division","dur":11},{"id":"2-sP854NMLw","title":"Long Division. DMSB. Grade 4","cat":"Long Division","dur":6},{"id":"GiiuZ8sfw00","title":"Long Division Made Easy - Examples","cat":"Long Division","dur":18},{"id":"xMQTMK5AO_A","title":"How to do Long Division | Math with Mr. J","cat":"Long Division","dur":1},{"id":"ITpzAicMmqo","title":"Dividing 3-Digit Numbers by 1-Digit Numbers","cat":"Long Division","dur":6},{"id":"Xe1hVG3T3Po","title":"Count by Twos | Skip Counting | Gracie's Corner","cat":"Skip Counting","dur":3},{"id":"-gmEe0-_ex8","title":"Count 10-100 | Count by 10 Song | The Singing Walrus","cat":"Skip Counting","dur":2},{"id":"amxVL9KUmq8","title":"Count by 5's | Exercise and Count By 5 | Jack Hartmann","cat":"Skip Counting","dur":3},{"id":"n-UYzQAnhqw","title":"Count by Tens | Skip Counting | Gracie's Corner","cat":"Skip Counting","dur":2},{"id":"Ftati8iGQcs","title":"The Counting by Tens Song | Scratch Garden","cat":"Skip Counting","dur":1},{"id":"MIE2OPEHYLE","title":"Numbers Song 1-100 | CoComelon","cat":"Skip Counting","dur":10},{"id":"V_lgJgBbqWE","title":"Our Favorite Numbers Songs | Super Simple Songs","cat":"Skip Counting","dur":30},{"id":"JxEFW6kjeGY","title":"Learn Skip Counting with Dump Trucks and Monster Trucks","cat":"Skip Counting","dur":15},{"id":"Argf3ylglD4","title":"COMPLETE COLLECTION!! 20 Skip Counting Songs!","cat":"Skip Counting","dur":8},{"id":"e0dJWfQHF8Y","title":"The Big Numbers Song","cat":"Counting","dur":3},{"id":"Aq4UAss33qA","title":"Count And Move | Super Simple Songs","cat":"Counting","dur":1},{"id":"xNw1SSz18Gg","title":"How Many Fingers? | Super Simple Songs","cat":"Counting","dur":3},{"id":"0TgLtF3PMOc","title":"Let's Get Fit | Count to 100 | Jack Hartmann","cat":"Counting","dur":2},{"id":"D0Ajq682yrA","title":"Number song 1-20 | The Singing Walrus","cat":"Counting","dur":2},{"id":"bGetqbqDVaA","title":"Big Numbers Song | Count to 100 | The Singing Walrus","cat":"Counting","dur":4},{"id":"DR-cfDsHCGA","title":"Counting 1-10 Song | The Singing Walrus","cat":"Counting","dur":2},{"id":"kuA-NCM5xL4","title":"Numbers Song with Little Chicks | CoComelon","cat":"Counting","dur":3},{"id":"3qisu9NF1_0","title":"Greater Than Less Than Song | Comparing Numbers","cat":"Place Value","dur":3},{"id":"1F3AycEDksY","title":"Place Value First Grade - Tens and Ones","cat":"Place Value","dur":4},{"id":"T5Qf0qSSJFI","title":"Math Antics - Place Value","cat":"Place Value","dur":9},{"id":"MloZcl1JJEI","title":"Place Value Song For Kids | Up To The Millions","cat":"Place Value","dur":4},{"id":"QS32l5WhSuY","title":"Place Values For Kids | Ones, Tens, Hundreds, Thousands","cat":"Place Value","dur":10},{"id":"sL76_VtvtgQ","title":"Numberblocks - Teen Numbers | Learn to Count","cat":"Place Value","dur":11},{"id":"omkDLmfvetk","title":"Place Value Lesson - 1st and 2nd Grade Math","cat":"Place Value","dur":5},{"id":"KG6ILNOiMgM","title":"Math Antics - Decimal Place Value","cat":"Place Value","dur":11},{"id":"4AF7xj7pmWc","title":"Expanded Form Video - 1st and 2nd Grade Math","cat":"Place Value","dur":4},{"id":"_dHu5TFxPtk","title":"Place Value: Ones and Tens | Kids Academy","cat":"Place Value","dur":3},{"id":"Ju3kQjmcH5g","title":"Place Value for Kids | Place Value for 1st Graders","cat":"Place Value","dur":6},{"id":"G1BLq9HWbPo","title":"Place Value and Expanded Form to the Millions Song","cat":"Place Value","dur":4},{"id":"Be4j6lJpFTQ","title":"Counting to 20 Song For Kids | Pre-K - Kindergarten","cat":"Place Value","dur":3},{"id":"xZSTL39XmdA","title":"Counting to 100 Song For Kids | Kindergarten","cat":"Place Value","dur":3},{"id":"J8VQi_CFIM4","title":"Numberblocks - Level Three Full Episodes","cat":"Comparing Numbers","dur":62},{"id":"ka9zbPcqXBI","title":"The Greater Than Less Than Song","cat":"Comparing Numbers","dur":2},{"id":"-Ldz0POzBoU","title":"Hallabaloo - Greater Than, Less Than, Equal To | GoNoodle","cat":"Comparing Numbers","dur":3},{"id":"rLZbniMGAVA","title":"Comparing Numbers - Greater Than Less Than","cat":"Comparing Numbers","dur":4},{"id":"Zzf1-bGNLW4","title":"UMIGO - Greater Than Less Than","cat":"Comparing Numbers","dur":3},{"id":"xGvrG6049wE","title":"Mr. Alligator Can Chomp | Less Than Greater Than","cat":"Comparing Numbers","dur":3},{"id":"E34PAOGYRNk","title":"Comparing Numbers for Kids | Kindergarten and 1st Grade","cat":"Comparing Numbers","dur":3},{"id":"362JVVvgYPE","title":"Fractions! | Mini Math Movies | Scratch Garden","cat":"Fractions","dur":6},{"id":"n0FZhQ_GkKw","title":"Let's Learn Fractions! | Kids Learning Videos","cat":"Fractions","dur":2},{"id":"p33BYf1NDAE","title":"Fractions for Kids | Homeschool Pop","cat":"Fractions","dur":8},{"id":"lTce7f6KGE0","title":"Fractions Song For Kids | 2nd - 3rd Grade","cat":"Fractions","dur":2},{"id":"CA9XLJpQp3c","title":"Math Antics - Fractions Are Parts","cat":"Fractions","dur":5},{"id":"wsnJtCloGf0","title":"Fractions Are a Piece of Cake | Numberblocks","cat":"Fractions","dur":4},{"id":"5lHXd1cJcMQ","title":"The Fractions Song","cat":"Fractions","dur":2},{"id":"6YGqtK6BN_Y","title":"Fractions are Parts of a Whole | Jack Hartmann","cat":"Fractions","dur":3},{"id":"qmfXyR7Z6Lk","title":"Math Antics - Multiplying Fractions","cat":"Fractions","dur":5},{"id":"N-Y0Kvcnw8g","title":"Math Antics - Common Denominator ECD","cat":"Fractions","dur":5},{"id":"SZaXtOHNh6s","title":"Fractions on a Number Line Song","cat":"Fractions","dur":3},{"id":"WV5VY76Pf5U","title":"Converting Fractions to Decimals Song","cat":"Fractions","dur":3},{"id":"9hZkk73nJ_Y","title":"Introduction to Fractions","cat":"Fractions","dur":6},{"id":"CoCmsyFQ_Xc","title":"Adding Fractions with Unlike Denominators","cat":"Fractions","dur":7},{"id":"P3AOoLbA3us","title":"Parallel, Perpendicular & Intersecting Lines Song","cat":"Fractions","dur":2},{"id":"xq-KN0pdv84","title":"The Yummy Pizza Fractions Song","cat":"Fractions","dur":2},{"id":"lcl8uB2AWM0","title":"Shapes Are All Around | PINKFONG Songs","cat":"Shapes","dur":3},{"id":"OEbRDtCAFdU","title":"Shapes song for kids | The Singing Walrus","cat":"Shapes","dur":3},{"id":"guNdJ5MtX1A","title":"3D Shapes Song | The Singing Walrus","cat":"Shapes","dur":3},{"id":"jlzX8jt0Now","title":"Learn Shapes | Educational Videos For Toddlers","cat":"Shapes","dur":9},{"id":"fkYNQ-_Xck8","title":"Explore Shapes Compilation | Numberblocks","cat":"Shapes","dur":26},{"id":"1nJ5VbyD6tY","title":"2D Shapes Song","cat":"Shapes","dur":3},{"id":"svrkthG2950","title":"Name the Shape Game | Jack Hartmann","cat":"Shapes","dur":3},{"id":"24Uv8Cl5hvI","title":"Shapes, Sides and Vertices | Jack Hartmann","cat":"Shapes","dur":3},{"id":"CiqzRrTqRA8","title":"Shawna's 3D Shapes | ABCmouse.com","cat":"Shapes","dur":2},{"id":"2cg-Uc556-Q","title":"3D Shapes I Know (sphere, cylinder, cube, cone, pyramid)","cat":"Shapes","dur":3},{"id":"ZnZYK83utu0","title":"3D Shapes Song For Kids | Spheres, Cylinders, Pyramids","cat":"Shapes","dur":4},{"id":"HKc_z5yjylo","title":"Learn 3D Shapes | Brain Candy TV","cat":"Shapes","dur":8},{"id":"74JhwbsVXQ8","title":"3D Shapes Song","cat":"Shapes","dur":3},{"id":"wa6Itbqw29g","title":"The Epic Shape Showdown! | Numberblocks","cat":"Shapes","dur":53},{"id":"2ag4fZmMRpM","title":"3D shapes model for school project","cat":"Shapes","dur":11},{"id":"Ux_kLd7qAcY","title":"Shapes! | Mini Math Movies | Scratch Garden","cat":"Shapes","dur":7},{"id":"1A-yZ4iweiw","title":"Learn 2D and 3D Shapes And Race Monster Trucks","cat":"Shapes","dur":24},{"id":"zPZegz690Mg","title":"3D Shapes Song for Kids | Jack Hartmann","cat":"Shapes","dur":3},{"id":"SJlhywRfvh8","title":"Symmetry Song for Kids | A Day at Symmetry Land","cat":"Geometry","dur":3},{"id":"YFzktJNmnPU","title":"Intro to Symmetry: All About Symmetry for Kids","cat":"Geometry","dur":2},{"id":"_Xs56r9o3Tw","title":"Line Of Symmetry | Mathematics Grade 4","cat":"Geometry","dur":2},{"id":"nt43FJQppCQ","title":"How To Find The Order Of Rotational Symmetry","cat":"Geometry","dur":3},{"id":"1u57rNNxDHg","title":"Symmetry for Kids | Math for Elementary Students","cat":"Geometry","dur":10},{"id":"dAqDwuHOi4g","title":"Intro to Symmetry (Part 1) | Lines of Symmetry","cat":"Geometry","dur":3},{"id":"79aZuCLPyCw","title":"Symmetry! | Jack Hartmann","cat":"Geometry","dur":4},{"id":"QHq3CSoal0I","title":"Math Antics - Symmetry","cat":"Geometry","dur":11},{"id":"xCdxURXMdFY","title":"Math Antics - Area","cat":"Geometry","dur":10},{"id":"O-cawByg2aA","title":"Math Antics - Circles, Circumference And Area","cat":"Geometry","dur":7},{"id":"AAY1bsazcgM","title":"Math Antics - Perimeter","cat":"Geometry","dur":7},{"id":"rSVMrPu0__U","title":"How to Find Area and Perimeter | Educational Rap","cat":"Geometry","dur":3},{"id":"9HPWB8UX8GQ","title":"How to find the Area and Perimeter of a Rectangle","cat":"Geometry","dur":1},{"id":"8cz_IB65pZM","title":"Area for Kids - Full Lesson | Homeschool Pop","cat":"Geometry","dur":8},{"id":"Tpy09HOkHyI","title":"Area and Perimeter Song For Kids","cat":"Geometry","dur":1},{"id":"MTSlKifo4js","title":"Perimeter for Kids | Math Lesson Video","cat":"Geometry","dur":6},{"id":"MtqtIiJsfiE","title":"What is Symmetry? - Basics | Don't Memorise","cat":"Geometry","dur":5},{"id":"NVuMULQjb3o","title":"Angles Song | Acute, Obtuse, & Right Angles","cat":"Geometry","dur":1},{"id":"DGKwdHMiqCg","title":"Math Antics - Angle Basics","cat":"Geometry","dur":7},{"id":"mLeNaZcy-hE","title":"Math Antics - Triangles","cat":"Geometry","dur":7},{"id":"_n3KZR1DSEo","title":"Math Antics - Angles & Degrees","cat":"Geometry","dur":9},{"id":"9RTM418qfdI","title":"Angles: measuring angles and their names!","cat":"Geometry","dur":4},{"id":"jSdWGcuDm5E","title":"Types of Angles | Learn with BYJU'S","cat":"Geometry","dur":5},{"id":"an1tG3upvow","title":"Lines and Angles | Songs for Kids | GoNoodle","cat":"Geometry","dur":3},{"id":"xzAGoErwAxg","title":"Angles - Types and definition","cat":"Geometry","dur":4},{"id":"X_97AO2SkGU","title":"Longer and Shorter with Monkeys Tico & Mario","cat":"Measurement","dur":3},{"id":"2wUsdsae0ro","title":"Measuring! | Mini Math Movies | Scratch Garden","cat":"Measurement","dur":7},{"id":"djTNUp4XIRo","title":"Metric System Conversions Song","cat":"Measurement","dur":2},{"id":"ZNX-a-5jGeM","title":"Math Antics - Intro to the Metric System","cat":"Measurement","dur":10},{"id":"P9sYvDCnI0g","title":"Inches, Feet and Yards Song | Customary Units","cat":"Measurement","dur":2},{"id":"JjKhSyUVFBI","title":"Tall and Short | Jack Hartmann","cat":"Measurement","dur":3},{"id":"AVC-426M6V0","title":"Units Of Measurement | Why Measurements Matter? | Dr Binocs","cat":"Measurement","dur":5},{"id":"ftB5VU64yGA","title":"Measuring Length | Mathematics Grade 1","cat":"Measurement","dur":3},{"id":"_1r7WVh2Zgc","title":"HOW TO USE A RULER TO MEASURE INCHES!","cat":"Measurement","dur":5},{"id":"qUOQrXmfwDM","title":"Is It Heavy or Light? | Jack Hartmann","cat":"Measurement","dur":2},{"id":"zoifk5jDDHY","title":"Ounces, Pounds, & Tons Song | Customary Units","cat":"Measurement","dur":2},{"id":"QHZSctWG8CY","title":"Blippi Learns About Weight | Moonbug Kids","cat":"Measurement","dur":11},{"id":"zXUICZRXDwQ","title":"Kilograms and Grams | Math with Mr. J","cat":"Measurement","dur":6},{"id":"ivAD44nh0D0","title":"Mass & Weight For Kids | TutWay","cat":"Measurement","dur":4},{"id":"TD1zuENbEdk","title":"Metric system: units of weight | Khan Academy","cat":"Measurement","dur":4},{"id":"ybEU-6U7s8k","title":"Measure Weight | Mathematics Grade 1","cat":"Measurement","dur":2},{"id":"E4UC_StFhAk","title":"UMIGO: A Cup Fills Up (CAPACITY)","cat":"Measurement","dur":4},{"id":"DMmI9PoTE8E","title":"Capacity Song | Customary Units of Liquid Measurement","cat":"Measurement","dur":2},{"id":"GKCE8ohIBqE","title":"Volume and Capacity | Science for Kids!","cat":"Measurement","dur":3},{"id":"HJ-QUDERA84","title":"Counting in Litres, Millilitres | Maths For Class 2","cat":"Measurement","dur":4},{"id":"b3rcIj-geuY","title":"Litres and Millilitres | Mathematics Grade 3","cat":"Measurement","dur":4},{"id":"QMpkm4dAB4w","title":"Capacity For Kids | Tutway","cat":"Measurement","dur":8},{"id":"bqi2gH36Sug","title":"Liters and Milliliters | Math with Mr. J","cat":"Measurement","dur":6},{"id":"RQc0adtgc60","title":"Convert Customary Units of Capacity","cat":"Measurement","dur":6},{"id":"HrxZWNu72WI","title":"Telling Time For Children - Learning the Clock","cat":"Time","dur":5},{"id":"r2K1Py9U87I","title":"Learn to Tell Time on a Clock | Rock 'N Learn","cat":"Time","dur":34},{"id":"EIxaxnageTo","title":"Learn to Tell Time | Fun Kids English","cat":"Time","dur":4},{"id":"g6tJAy_7AL4","title":"Hip-Hop Around the Clock | Jack Hartmann","cat":"Time","dur":2},{"id":"h6RNkQ7lU8Y","title":"Telling Time Song for Kids | Time to 5 Minutes","cat":"Time","dur":6},{"id":"QU-XUmujbuM","title":"Math Antics - Telling Time","cat":"Time","dur":14},{"id":"tEmg914-9xY","title":"Let's Learn About the Clock | Jack Hartmann","cat":"Time","dur":2},{"id":"IBBQXBhSNUs","title":"How to Tell Time","cat":"Time","dur":9},{"id":"MaVgBjVh4b8","title":"Telling Time to the Half Hour and Hour Song","cat":"Time","dur":6},{"id":"bZY8WNMRcQ8","title":"Analog Clocks for Kids | How To Tell Time","cat":"Time","dur":13},{"id":"zaOc-4TA4lk","title":"Telling Time Song For Kids (AM & PM)","cat":"Time","dur":3},{"id":"zXFZUMjehDU","title":"Elapsed Time Third Grade","cat":"Time","dur":4},{"id":"Sbi-r571TYc","title":"What Time Is It | Tell Time On An Analog Clock","cat":"Time","dur":3},{"id":"xJBek5XCexw","title":"Telling Time Song: What Time Is It? | LittleBabyBum","cat":"Time","dur":1},{"id":"oyaDS_C3mOQ","title":"Numberblocks - About Time! | Learn to Count","cat":"Time","dur":10},{"id":"RBvmO7NgUp0","title":"What's the Time?","cat":"Time","dur":2},{"id":"1eGkW3JnthI","title":"What Time Is It? - Telling the Time Song","cat":"Time","dur":2},{"id":"w9QK_4vrnJ0","title":"The Telling Time Song | Scratch Garden","cat":"Time","dur":3},{"id":"8RJzoyIVzV8","title":"Learn How to Tell Time on a Clock","cat":"Time","dur":7},{"id":"StjW0HPOmVs","title":"StoryBots | Songs About Time! | Learn How To Tell Time","cat":"Time","dur":14},{"id":"aajLkveG750","title":"\"Coins!\" by ABCmouse.com","cat":"Money","dur":3},{"id":"pnXJGNo08v0","title":"The Money Song | Penny, Nickel, Dime, Quarter | Jack Hartmann","cat":"Money","dur":3},{"id":"YxRg6n93nRk","title":"Money Song | Counting Coins | Gracie's Corner","cat":"Money","dur":3},{"id":"MbtmucV-U2c","title":"Counting Coins Song for Kids | 2nd Grade","cat":"Money","dur":3},{"id":"q9jexkHgjxo","title":"Learning Money / Coin Song / Money Song","cat":"Money","dur":4},{"id":"3ARNqyQ0CuY","title":"Coin Song","cat":"Money","dur":3},{"id":"ngxUDmPQJHA","title":"Counting Coins with Numberblock 5 | Numberblocks","cat":"Money","dur":67},{"id":"RVpcZ5obmsM","title":"Money Song | Show Me the Money | Jack Hartmann","cat":"Money","dur":2},{"id":"SUYJHL2muN8","title":"Coins for Kids | U.S. Money | Elementary Math","cat":"Money","dur":13},{"id":"vMSAzl6V95M","title":"Get Your Money Right Song | GoNoodle","cat":"Money","dur":3},{"id":"d0nbnoagh10","title":"Math's Money - Learn Dollar and Cents","cat":"Money","dur":3},{"id":"KjufnZmARSc","title":"Equivalent Coin Combinations & Counting Money","cat":"Money","dur":12},{"id":"l6A651vHK1o","title":"4 Quarters Make a Dollar! - A Money Math Song","cat":"Money","dur":1},{"id":"DbYbIB4m3RM","title":"Math Antics - Dollars And Cents","cat":"Money","dur":13},{"id":"KpSrBAPSqVo","title":"Piggy Bank Song | Little Angel","cat":"Money","dur":3},{"id":"GZ7y-yFdX9M","title":"Who Invented Money? | Dr Binocs Show","cat":"Money","dur":5},{"id":"RJ5Lmg7DbHs","title":"This 2-year-old is a math GENIUS!","cat":"Money","dur":1},{"id":"Bcu8k_8LTxY","title":"Odd Side Story | Learn to Count - Numberblocks","cat":"Odd & Even","dur":4},{"id":"BO98e-RmWzM","title":"Counting By Odd Numbers | Tiny Tunes","cat":"Odd & Even","dur":3},{"id":"7c51zFHrjec","title":"Exciting football highlights | 30 mins | Numberblocks","cat":"Odd & Even","dur":27},{"id":"GE7KOkZxBQ8","title":"Numberblocks - Odds vs Evens | Learn to Count","cat":"Odd & Even","dur":13},{"id":"_MCvo1crWJ0","title":"Cody's Recess Colors & Numbers Song | CoComelon","cat":"Odd & Even","dur":3},{"id":"jMdVJuAFuVU","title":"Counting By Even Numbers | Tiny Tunes","cat":"Odd & Even","dur":3},{"id":"FnlB2CBEfDQ","title":"Odd Side Story & the Numberblocks MathLink Cubes","cat":"Odd & Even","dur":1},{"id":"XPFSLhUHSX4","title":"Learn Math | Adding with Monster Trucks | Brain Candy TV","cat":"Word Problems","dur":5},{"id":"X_ZJc9_n7TY","title":"How to Calculate Faster than a Calculator","cat":"Mental Math","dur":5},{"id":"Hs0wjbxvCt0","title":"Mental Maths #2 | Addition and Subtraction","cat":"Mental Math","dur":8},{"id":"DNCzcxZs_pc","title":"How I learned to Calculate Extremely Fast","cat":"Mental Math","dur":5},{"id":"nTn9gVqRfKY","title":"Mental Math Tricks - All Operations!","cat":"Mental Math","dur":21},{"id":"3zXXFwHqlhg","title":"Easy Subtraction Trick | Fast way to learn","cat":"Mental Math","dur":7},{"id":"YllkyKiQMS8","title":"How to Calculate Faster than a Calculator #2","cat":"Mental Math","dur":10},{"id":"CCCs6maSxiw","title":"5 Tricks to Become Human Calculator","cat":"Mental Math","dur":15},{"id":"F-THPY14fzc","title":"Teenagers mentally calculate 100 3-digit numbers","cat":"Mental Math","dur":4},{"id":"hBTdzX5SFhM","title":"How to Calculate Faster than a Calculator | Prashant Kirad","cat":"Mental Math","dur":26},{"id":"Calc3x13m-M","title":"Can You Pass This Maths Quiz? | Easy to Impossible","cat":"Math Quizzes","dur":18},{"id":"BoxvayyRNfU","title":"ADDITION - EASIEST WAY FOR KIDS | MATH QUIZ","cat":"Math Quizzes","dur":17},{"id":"ITOXb8K74is","title":"Math Quiz for Kids | One Digit Addition Quiz","cat":"Math Quizzes","dur":16},{"id":"4RB3qKRpgyE","title":"Can You Pass 10/20? Ultimate Math Quiz Challenge!","cat":"Math Quizzes","dur":6},{"id":"-XmuErIQe_o","title":"20 Addition Quiz Exercises for Kids","cat":"Math Quizzes","dur":10},{"id":"fd-E18EqSVk","title":"Math Antics - Rounding","cat":"Rounding & Estimation","dur":10},{"id":"CMdck80SHnw","title":"Rounding to the Nearest Ten","cat":"Rounding & Estimation","dur":3},{"id":"VPdE5aOH52g","title":"Round Up And Down | Kids Academy","cat":"Rounding & Estimation","dur":5},{"id":"_MIn3zFkEcc","title":"Rounding decimals: to the nearest tenth | Khan Academy","cat":"Rounding & Estimation","dur":1},{"id":"Lv_FfiIhVDo","title":"Rounding to the nearest 100","cat":"Rounding & Estimation","dur":2},{"id":"8Qwugoey0dQ","title":"Rounding Numbers for Kids","cat":"Rounding & Estimation","dur":8},{"id":"wXPEUPjPFTE","title":"Rounding to the Nearest 10","cat":"Rounding & Estimation","dur":5},{"id":"RdzCXBgB-9s","title":"Mini Math Movies Compilation! | Scratch Garden","cat":"Rounding & Estimation","dur":85},{"id":"xnUkIsdvfGY","title":"Estimating! | Mini Math Movies | Scratch Garden","cat":"Rounding & Estimation","dur":6},{"id":"EvQf38lnAJc","title":"Estimating Whole Number Sums & Differences","cat":"Rounding & Estimation","dur":7},{"id":"zF_dBk8EPDk","title":"Data! | Mini Math Movies | Scratch Garden","cat":"Data & Graphs","dur":8},{"id":"hcgThf5mv38","title":"Math Antics - Data And Graphs","cat":"Data & Graphs","dur":12},{"id":"oYXmY5axC2I","title":"Bar Graphs for 2nd Grade Kids","cat":"Data & Graphs","dur":4},{"id":"yZJR2MzkBrU","title":"Bar Graphs & Picture Graphs Song","cat":"Data & Graphs","dur":2},{"id":"bmY28wdGL9M","title":"Graphs for Kids | Learn all about basic graphs","cat":"Data & Graphs","dur":6},{"id":"ReW4MPqXTvA","title":"Creating Bar Graphs","cat":"Data & Graphs","dur":3},{"id":"J2DKgCf353k","title":"Bar Graph | Mathematics Grade 4","cat":"Data & Graphs","dur":3},{"id":"V4vijfX-3u0","title":"Pictographs for Kids | Read, Interpret, Draw","cat":"Data & Graphs","dur":7},{"id":"vVdY36jjmXI","title":"Pictographs (with Activity)","cat":"Data & Graphs","dur":7},{"id":"RQsHOeoz57s","title":"Data Representation - Pictograph","cat":"Data & Graphs","dur":4},{"id":"2a5OuENTZUg","title":"Pictograph and Bar Graphs | Grade 5","cat":"Data & Graphs","dur":5},{"id":"RQDmO1IcTdE","title":"Making Picture Graphs","cat":"Data & Graphs","dur":1},{"id":"ZcGb5u2qigY","title":"Tally O'Malley","cat":"Data & Graphs","dur":6},{"id":"bT7282PUKnY","title":"Numberblocks - Pattern Palace | Learn to Count","cat":"Patterns","dur":2},{"id":"eEV_z7kXO6c","title":"Numberblocks - Can You Solve The Pattern?","cat":"Patterns","dur":6},{"id":"sBM659zMj6Y","title":"Finish the Pattern? | 1 Hour | Numberblocks","cat":"Patterns","dur":62},{"id":"dq4wLVB0Z4U","title":"Patterns, Sequences, and Code Cracking! | Numberblocks","cat":"Patterns","dur":36},{"id":"8a4sYTueSJE","title":"Numberblocks - Patterns and Shapes","cat":"Patterns","dur":38},{"id":"o-ZcwRcbrZ0","title":"Numberblocks | Patterns and Sequences","cat":"Patterns","dur":13},{"id":"SjSHVDfXHQ4","title":"The magic of Fibonacci numbers | TED","cat":"Patterns","dur":6},{"id":"MBjjxSx45-Q","title":"The Patterns Practice Song | Scratch Garden","cat":"Patterns","dur":2},{"id":"Lh3twupvl7M","title":"Patterns 1 - ABAB Pattern with Shapes & Colors","cat":"Patterns","dur":2},{"id":"vaqXy6_VAsg","title":"Preschool Patterns | Counting for Kids | Numberblocks","cat":"Patterns","dur":62},{"id":"Js45cR_7wFE","title":"Patterns! | Mini Math Movies | Scratch Garden","cat":"Patterns","dur":7},{"id":"wZ4KhfX_HEs","title":"Patterns Song! | Mooseclumps","cat":"Patterns","dur":4},{"id":"usIOL_FW5R4","title":"LKG class english Worksheets | Alphabets","cat":"Patterns","dur":2},{"id":"Uh4ctGkw13Y","title":"ABC Song (Alphabet Mat Version) | LiaChaCha","cat":"Patterns","dur":22},{"id":"eJv6EAVrhdo","title":"Numberblocks - Additions | Learn to Count","cat":"Number Bonds","dur":11},{"id":"At0quRa90rs","title":"Doubles Addition Facts Song","cat":"Number Bonds","dur":1},{"id":"ch7KzI3n2Zk","title":"I Can Say My Number Pairs 10 | Jack Hartmann","cat":"Number Bonds","dur":4},{"id":"1ZDcByAHKt8","title":"Fun First Grade Math | Numberblocks","cat":"Number Bonds","dur":62},{"id":"4Wa-pr5_AFE","title":"Learn Addition and Subtraction Level 2 | Numberblocks","cat":"Number Bonds","dur":80},{"id":"uRoJ5E-Xx9s","title":"Let's Learn Our Addition Facts 1 | Jack Hartmann","cat":"Number Bonds","dur":4},{"id":"jft6MQeq9sY","title":"Numberblocks - Learn to Add! | Addition","cat":"Number Bonds","dur":21},{"id":"3AZoC5uUbEk","title":"Learn Addition | 30 Minutes! | Numberblocks","cat":"Number Bonds","dur":31},{"id":"YyiyTs0ND5w","title":"Number Magic Subtraction Spectacular! | Numberblocks","cat":"Number Bonds","dur":62},{"id":"ScW_Svb4mPU","title":"Math For Kids | Counting, Number Lines, Number Bonds","cat":"Number Bonds","dur":30},{"id":"QdSUN96eQKY","title":"Second Grade Math - Learn To Count! | Numberblocks","cat":"Numberblocks","dur":18},{"id":"b8qe06QXi1Q","title":"The Team Factor | Learn to Count - Numberblocks","cat":"Numberblocks","dur":4},{"id":"doKGmShP2II","title":"Thank you Number Fans! | Numberblocks","cat":"Numberblocks","dur":17},{"id":"lZKiCgJa-fA","title":"The Treasure Of Hexagon Island! | Numberblocks","cat":"Numberblocks","dur":20},{"id":"OWgRsFw0iU0","title":"Now You See Us | Learn to Count - Numberblocks","cat":"Numberblocks","dur":4},{"id":"GnVLJowv6eU","title":"Building All Numberblocks 1 to 10","cat":"Numberblocks","dur":66},{"id":"zPB14peKpo0","title":"Stampolines and Arty Math | Numberblocks","cat":"Numberblocks","dur":27},{"id":"nS6K8bBQagk","title":"36 minutes of the BIGGEST Numberblocks Ever!","cat":"Numberblocks","dur":36},{"id":"6r3Eqtl3nDM","title":"Colourful Math For Kids! | Numberblocks 1 Hour","cat":"Numberblocks","dur":50},{"id":"MU5nBCF5c94","title":"A Ram Sam Sam Song | The Learning Station","cat":"Math Songs","dur":3},{"id":"7D4K9oi7oBM","title":"Top 10 Counting Songs | Super Simple Songs","cat":"Math Songs","dur":20},{"id":"S84fcGdEULk","title":"Counting Up To 20 | Super Simple Songs","cat":"Math Songs","dur":2},{"id":"1IHyTSk0hfo","title":"Addition Special Level 3 | 30 Min | Numberblocks","cat":"Math Songs","dur":31},{"id":"qeAVXeETETI","title":"Place Value | Expanded, Word, and Standard Form Song","cat":"Math Songs","dur":4},{"id":"CgkbDcSaHl0","title":"Learn Multiplication - Table of 2 to 10","cat":"Math Songs","dur":18},{"id":"lTyhp1BPNcI","title":"Let's Multiply 1 to 20! | Numberblocks","cat":"Math Songs","dur":18}];
+
+let playlist=[...VIDEOS];
+let currentIdx=0;
+let autoplay=true;
+let shuffled=false;
+let player;
+let activeCats=new Set();
+
+const cats=[...new Set(VIDEOS.map(v=>v.cat))];
+
+function initCats(){
+  const el=document.getElementById('catPills');
+  const allPill=document.createElement('span');
+  allPill.className='cat-pill active';
+  allPill.textContent='All';
+  allPill.onclick=()=>{activeCats.clear();document.querySelectorAll('.cat-pill').forEach(p=>p.classList.remove('active'));allPill.classList.add('active');filterList()};
+  el.appendChild(allPill);
+  cats.forEach(c=>{
+    const p=document.createElement('span');
+    p.className='cat-pill';
+    p.textContent=c;
+    p.onclick=()=>{
+      document.querySelector('.cat-pill.active:first-child')?.classList.remove('active');
+      if(activeCats.has(c)){activeCats.delete(c);p.classList.remove('active')}
+      else{activeCats.add(c);p.classList.add('active')}
+      if(!activeCats.size)allPill.classList.add('active');
+      filterList()
+    };
+    el.appendChild(p)
+  })
+}
+
+function filterList(){
+  const q=document.getElementById('searchInput').value.toLowerCase();
+  playlist=VIDEOS.filter(v=>{
+    if(activeCats.size&&!activeCats.has(v.cat))return false;
+    if(q&&!v.title.toLowerCase().includes(q)&&!v.cat.toLowerCase().includes(q))return false;
+    return true
+  });
+  currentIdx=0;
+  renderList();
+  document.getElementById('countBar').textContent=playlist.length+' videos'
+}
+
+function renderList(){
+  const el=document.getElementById('videoList');
+  el.innerHTML='';
+  playlist.forEach((v,i)=>{
+    const d=document.createElement('div');
+    d.className='vid-item'+(i===currentIdx?' playing':'');
+    d.innerHTML=`<span class="num">${i+1}</span><div class="meta"><div class="title">${esc(v.title)}</div><div class="cat">${esc(v.cat)}</div></div><span class="dur">${v.dur}m</span>`;
+    d.onclick=()=>playIndex(i);
+    el.appendChild(d)
+  })
+}
+
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+function playIndex(i){
+  if(i<0||i>=playlist.length)return;
+  currentIdx=i;
+  const v=playlist[i];
+  player.loadVideoById(v.id);
+  document.getElementById('nowPlaying').textContent=v.title;
+  renderList();
+  document.querySelector('.vid-item.playing')?.scrollIntoView({block:'nearest'})
+}
+
+function playNext(){if(currentIdx<playlist.length-1)playIndex(currentIdx+1);else playIndex(0)}
+function playPrev(){if(currentIdx>0)playIndex(currentIdx-1);else playIndex(playlist.length-1)}
+
+function togglePlay(){
+  if(!player)return;
+  const s=player.getPlayerState();
+  if(s===1)player.pauseVideo();else player.playVideo()
+}
+
+function toggleAutoplay(){
+  autoplay=!autoplay;
+  const b=document.getElementById('autoBtn');
+  b.textContent=autoplay?'Auto-play ON':'Auto-play OFF';
+  b.classList.toggle('active',autoplay)
+}
+
+function shuffle(){
+  shuffled=!shuffled;
+  document.getElementById('shuffleBtn').classList.toggle('active',shuffled);
+  if(shuffled){
+    const cur=playlist[currentIdx];
+    for(let i=playlist.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[playlist[i],playlist[j]]=[playlist[j],playlist[i]]}
+    currentIdx=playlist.indexOf(cur);
+  }else{
+    const cur=playlist[currentIdx];
+    filterList();
+    currentIdx=playlist.indexOf(cur);
+    if(currentIdx<0)currentIdx=0;
+  }
+  renderList()
+}
+
+function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open')}
+
+function onYouTubeIframeAPIReady(){
+  player=new YT.Player('playerTarget',{
+    height:'100%',width:'100%',
+    videoId:playlist[0].id,
+    host:'https://www.youtube-nocookie.com',
+    playerVars:{
+      autoplay:1,rel:0,modestbranding:1,fs:1,
+      disablekb:0,iv_load_policy:3,
+      origin:location.origin
+    },
+    events:{
+      onReady:()=>{document.getElementById('nowPlaying').textContent=playlist[0].title},
+      onStateChange:(e)=>{
+        const b=document.getElementById('playBtn');
+        if(e.data===YT.PlayerState.ENDED){b.textContent='Play';if(autoplay)playNext()}
+        else if(e.data===YT.PlayerState.PLAYING)b.textContent='Pause';
+        else if(e.data===YT.PlayerState.PAUSED)b.textContent='Play'
+      }
+    }
+  })
+}
+
+initCats();
+filterList();
+
+const tag=document.createElement('script');
+tag.src='https://www.youtube.com/iframe_api';
+document.head.appendChild(tag);
+</script>
+</body>
+</html>

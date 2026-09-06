@@ -70,6 +70,11 @@ header .browse-btn:hover{background:#c73652}
 .vcard-title{font-size:.78em;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .vcard-cat{font-size:.65em;color:#888;margin-top:3px}
 .vcard.playing .vcard-cat{color:#fcc}
+.vcard.loading{opacity:.5;pointer-events:none}
+.vcard.loading .vcard-play{opacity:1;background:rgba(0,0,0,.6)}
+@keyframes spin{to{transform:translate(-50%,-50%) rotate(360deg)}}
+.vcard.loading .vcard-play svg{animation:spin .8s linear infinite}
+.now-playing.loading{opacity:.5}
 
 /* Fullscreen overlay controls */
 .fs-controls{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:2147483647;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);border-radius:28px;padding:8px 16px;gap:10px;align-items:center;display:flex;opacity:0;pointer-events:none;transition:opacity .3s}
@@ -333,11 +338,24 @@ function playIndex(i){
   if(i<0||i>=playlist.length)return;
   currentIdx=i;
   const v=playlist[i];
-  player.loadVideoById(v.id);
-  document.getElementById('nowPlaying').textContent=v.title;
+  // Immediate visual feedback
+  const np=document.getElementById('nowPlaying');
+  np.textContent='Loading: '+v.title;
+  np.classList.add('loading');
   document.getElementById('fsTitle').textContent=v.title;
-  renderGrid();
+  // Highlight clicked card and show spinner
+  document.querySelectorAll('.vcard').forEach((c,idx)=>{
+    c.classList.remove('playing','loading');
+    if(idx===i) c.classList.add('loading');
+  });
+  // Close browse immediately
   document.getElementById('browse').classList.remove('open');
+  // Load video after UI updates
+  requestAnimationFrame(()=>{
+    player.loadVideoById(v.id);
+    np.textContent=v.title;
+    np.classList.remove('loading');
+  });
 }
 
 function playNext(){if(currentIdx<playlist.length-1)playIndex(currentIdx+1);else playIndex(0)}
@@ -371,7 +389,13 @@ function shuffle(){
   renderGrid()
 }
 
-function toggleBrowse(){document.getElementById('browse').classList.toggle('open');showBars()}
+function toggleBrowse(){
+  const b=document.getElementById('browse');
+  const opening=!b.classList.contains('open');
+  b.classList.toggle('open');
+  if(opening)requestAnimationFrame(()=>renderGrid());
+  showBars();
+}
 
 let mobileFs=false;
 let mobileControlsTimeout;

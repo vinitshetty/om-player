@@ -121,6 +121,9 @@ header .browse-btn:hover{background:#c73652}
 .mobile-fs .controls.show-controls{opacity:1;pointer-events:auto}
 .fs-tap{display:none}
 .mobile-fs .fs-tap{display:block;position:absolute;top:0;left:0;right:0;bottom:50px;z-index:10000;cursor:pointer}
+.watch-time{position:fixed;bottom:12px;right:12px;background:rgba(22,33,62,.85);backdrop-filter:blur(6px);color:#ccc;font-size:.75em;padding:5px 12px;border-radius:12px;z-index:50;pointer-events:none}
+.watch-time span{color:#e94560;font-weight:600}
+.mobile-fs .watch-time{display:none}
 </style>
 </head>
 <body>
@@ -157,6 +160,7 @@ header .browse-btn:hover{background:#c73652}
     </div>
   </div>
 </div>
+<div class="watch-time" id="watchTime">Today: <span id="watchVal">0m</span></div>
 
 <!-- Browse overlay -->
 <div class="browse" id="browse">
@@ -459,13 +463,47 @@ function onYouTubeIframeAPIReady(){
         document.getElementById('fsTitle').textContent=playlist[currentIdx].title;
       },
       onStateChange:(e)=>{
-        if(e.data===YT.PlayerState.ENDED){updatePlayIcons(false);if(autoplay)playNext()}
-        else if(e.data===YT.PlayerState.PLAYING)updatePlayIcons(true);
-        else if(e.data===YT.PlayerState.PAUSED)updatePlayIcons(false)
+        if(e.data===YT.PlayerState.ENDED){updatePlayIcons(false);stopWatchTimer();if(autoplay)playNext()}
+        else if(e.data===YT.PlayerState.PLAYING){updatePlayIcons(true);startWatchTimer()}
+        else if(e.data===YT.PlayerState.PAUSED){updatePlayIcons(false);stopWatchTimer()}
       }
     }
   })
 }
+
+// ── Watch time tracking ──
+const WT_KEY='om_watch_time';
+let wtInterval=null;
+
+function todayKey(){return new Date().toISOString().slice(0,10)}
+
+function getWatchSecs(){
+  try{const d=JSON.parse(localStorage.getItem(WT_KEY)||'{}');return d[todayKey()]||0}catch(e){return 0}
+}
+
+function saveWatchSecs(s){
+  try{const d=JSON.parse(localStorage.getItem(WT_KEY)||'{}');d[todayKey()]=s;localStorage.setItem(WT_KEY,JSON.stringify(d))}catch(e){}
+}
+
+function fmtWatch(s){
+  const h=Math.floor(s/3600),m=Math.floor((s%3600)/60);
+  return h>0?h+'h '+m+'m':m+'m';
+}
+
+function updateWatchDisplay(){
+  document.getElementById('watchVal').textContent=fmtWatch(getWatchSecs());
+}
+
+function startWatchTimer(){
+  if(wtInterval)return;
+  wtInterval=setInterval(()=>{saveWatchSecs(getWatchSecs()+1);updateWatchDisplay()},1000);
+}
+
+function stopWatchTimer(){
+  if(wtInterval){clearInterval(wtInterval);wtInterval=null}
+}
+
+updateWatchDisplay();
 </script>
 </body>
 </html>

@@ -18,8 +18,7 @@ header .info{font-size:.8em;color:#999}
 /* Player area */
 .player-area{display:flex;flex-direction:column;background:#000;position:relative;min-height:0;overflow:hidden}
 .video-wrap{position:relative;width:100%;padding-top:56.25%;background:#000;flex-shrink:0;overflow:hidden}
-.video-wrap iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0;pointer-events:none}
-.vid-overlay{position:absolute;top:0;left:0;right:0;bottom:0;z-index:10;cursor:pointer}
+.video-wrap iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0}
 
 /* Controls bar */
 .controls{display:flex;align-items:center;gap:6px;padding:8px 12px;background:#16213e;flex-shrink:0}
@@ -28,15 +27,6 @@ header .info{font-size:.8em;color:#999}
 .controls button.active{background:#e94560}
 .controls button.text-btn{width:auto;border-radius:8px;padding:4px 10px;font-size:.75em}
 .now-playing{flex:1;min-width:0;font-size:.8em;color:#ccc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin:0 4px}
-.time-info{font-size:.7em;color:#888;white-space:nowrap;flex-shrink:0}
-
-/* Progress/Seek bar */
-.progress-wrap{height:10px;background:#0f3460;cursor:pointer;flex-shrink:0;position:relative;padding:3px 0}
-.progress-wrap:hover{height:14px}
-.progress-wrap::after{content:'';position:absolute;top:0;left:0;right:0;bottom:0}
-.progress-bar{height:100%;background:#e94560;width:0%;border-radius:2px;transition:width .5s linear;pointer-events:none;position:relative}
-.progress-bar::after{content:'';position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:12px;height:12px;background:#fff;border-radius:50%;box-shadow:0 0 4px rgba(0,0,0,.5);opacity:0;transition:opacity .2s}
-.progress-wrap:hover .progress-bar::after{opacity:1}
 
 /* Sidebar */
 .sidebar{display:flex;flex-direction:column;background:#16213e;border-left:2px solid #0f3460;overflow:hidden}
@@ -117,8 +107,6 @@ header .info{font-size:.8em;color:#999}
 .mobile-fs header,.mobile-fs .sidebar{display:none!important}
 .mobile-fs .video-wrap{padding-top:0;flex:1;min-height:0}
 .mobile-fs .video-wrap iframe{position:absolute;top:0;left:0;width:100%;height:100%}
-.mobile-fs .progress-wrap{position:absolute;bottom:44px;left:0;right:0;z-index:10001;opacity:0;transition:opacity .3s;pointer-events:none}
-.mobile-fs .progress-wrap.show-controls{opacity:1;pointer-events:auto}
 .mobile-fs .controls{position:absolute;bottom:0;left:0;right:0;background:rgba(22,33,62,.85);z-index:10001;opacity:0;transition:opacity .3s;pointer-events:none}
 .mobile-fs .controls.show-controls{opacity:1;pointer-events:auto}
 .fs-tap{display:none}
@@ -136,24 +124,18 @@ header .info{font-size:.8em;color:#999}
     <div class="player-area">
       <div class="video-wrap" id="videoWrap">
         <div id="playerTarget"></div>
-        <div class="vid-overlay" onclick="togglePlay()"></div>
       </div>
       <div class="fs-tap" id="fsTap" onclick="showMobileControls()"></div>
-      <div class="progress-wrap" id="progressWrap" onclick="seekTo(event)">
-        <div class="progress-bar" id="progressBar"></div>
-      </div>
       <div class="controls">
         <button onclick="playPrev()" title="Previous"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
-        <button onclick="skip(-10)" title="Back 10s"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 5V1l-5 5 5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6h-2c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/><text x="10" y="16" font-size="7" text-anchor="middle" fill="currentColor" font-weight="bold">10</text></svg></button>
         <button onclick="togglePlay()" id="playBtn" title="Play/Pause"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6zm8-14v14h4V5z"/></svg></button>
-        <button onclick="skip(10)" title="Forward 10s"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12.01 5V1l5 5-5 5V7c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6h2c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8z"/><text x="14" y="16" font-size="7" text-anchor="middle" fill="currentColor" font-weight="bold">10</text></svg></button>
         <button onclick="playNext()" title="Next"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6zm8.5 0h2V6h-2z"/></svg></button>
         <button onclick="shuffle()" id="shuffleBtn" title="Shuffle"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg></button>
         <button onclick="toggleAutoplay()" id="autoBtn" class="active text-btn" title="Auto-play">Auto</button>
         <button onclick="goFullscreen()" id="fsBtn" title="Fullscreen"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></button>
         <button onclick="exitFullscreen()" id="exitFsBtn" style="display:none" title="Exit Fullscreen"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg></button>
         <button class="mob-toggle text-btn" onclick="toggleSidebar()"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg></button>
-        <span class="time-info" id="timeInfo">0:00 / 0:00</span>
+        <div class="now-playing" id="nowPlaying"></div>
       </div>
       <div class="fs-controls" id="fsControls">
         <button onclick="playPrev()" title="Previous"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
@@ -283,39 +265,6 @@ function togglePlay(){
   if(s===1)player.pauseVideo();else player.playVideo()
 }
 
-function skip(sec){
-  if(!player)return;
-  player.seekTo(player.getCurrentTime()+sec,true);
-}
-
-function seekTo(e){
-  if(!player)return;
-  const bar=document.getElementById('progressWrap');
-  const pct=e.offsetX/bar.offsetWidth;
-  player.seekTo(pct*player.getDuration(),true);
-}
-
-function fmtTime(s){
-  s=Math.floor(s);
-  const m=Math.floor(s/60);
-  const sec=s%60;
-  return m+':'+(sec<10?'0':'')+sec;
-}
-
-let progressInterval;
-function startProgress(){
-  clearInterval(progressInterval);
-  progressInterval=setInterval(()=>{
-    if(!player||!player.getDuration)return;
-    const cur=player.getCurrentTime();
-    const dur=player.getDuration();
-    if(dur>0){
-      document.getElementById('progressBar').style.width=(cur/dur*100)+'%';
-      document.getElementById('timeInfo').textContent=fmtTime(cur)+' / '+fmtTime(dur);
-    }
-  },500);
-}
-
 function toggleAutoplay(){
   autoplay=!autoplay;
   document.getElementById('autoBtn').classList.toggle('active',autoplay)
@@ -345,20 +294,15 @@ let mobileControlsTimeout;
 
 function goFullscreen(){
   if(isMobile()){
-    // CSS-based fullscreen for mobile
     mobileFs=true;
     document.querySelector('.app').classList.add('mobile-fs');
     const ctrl=document.querySelector('.controls');
-    const prog=document.getElementById('progressWrap');
     ctrl.classList.add('show-controls');
-    prog.classList.add('show-controls');
     clearTimeout(mobileControlsTimeout);
-    mobileControlsTimeout=setTimeout(()=>{ctrl.classList.remove('show-controls');prog.classList.remove('show-controls')},3000);
-    // Try to lock landscape
+    mobileControlsTimeout=setTimeout(()=>ctrl.classList.remove('show-controls'),3000);
     try{screen.orientation.lock('landscape').catch(()=>{})}catch(e){}
     document.getElementById('fsBtn').style.display='none';
     document.getElementById('exitFsBtn').style.display='';
-    // Touch to show controls
     document.querySelector('.player-area').addEventListener('touchstart',showMobileControls);
     document.querySelector('.player-area').addEventListener('mousemove',showMobileControls);
     return;
@@ -373,7 +317,6 @@ function exitFullscreen(){
     mobileFs=false;
     document.querySelector('.app').classList.remove('mobile-fs');
     document.querySelector('.controls').classList.remove('show-controls');
-    document.getElementById('progressWrap').classList.remove('show-controls');
     document.querySelector('.player-area').removeEventListener('touchstart',showMobileControls);
     document.querySelector('.player-area').removeEventListener('mousemove',showMobileControls);
     document.getElementById('fsBtn').style.display='';
@@ -388,11 +331,9 @@ function exitFullscreen(){
 function showMobileControls(e){
   if(e)e.stopPropagation();
   const ctrl=document.querySelector('.controls');
-  const prog=document.getElementById('progressWrap');
   ctrl.classList.add('show-controls');
-  prog.classList.add('show-controls');
   clearTimeout(mobileControlsTimeout);
-  mobileControlsTimeout=setTimeout(()=>{ctrl.classList.remove('show-controls');prog.classList.remove('show-controls')},4000);
+  mobileControlsTimeout=setTimeout(()=>ctrl.classList.remove('show-controls'),4000);
 }
 
 let fsTimeout;
@@ -419,6 +360,14 @@ function onFsChange(){
 document.addEventListener('fullscreenchange',onFsChange);
 document.addEventListener('webkitfullscreenchange',onFsChange);
 
+// Add sandbox to iframe after YouTube API creates it — blocks popups and navigation
+function sandboxIframe(){
+  const iframe=document.querySelector('.video-wrap iframe');
+  if(iframe&&!iframe.hasAttribute('sandbox')){
+    iframe.setAttribute('sandbox','allow-scripts allow-same-origin allow-presentation');
+  }
+}
+
 function onYouTubeIframeAPIReady(){
   player=new YT.Player('playerTarget',{
     height:'100%',width:'100%',
@@ -430,7 +379,11 @@ function onYouTubeIframeAPIReady(){
       origin:location.origin
     },
     events:{
-      onReady:()=>{document.getElementById('nowPlaying').textContent=playlist[0].title;document.getElementById('fsTitle').textContent=playlist[0].title;startProgress()},
+      onReady:()=>{
+        document.getElementById('nowPlaying').textContent=playlist[0].title;
+        document.getElementById('fsTitle').textContent=playlist[0].title;
+        sandboxIframe();
+      },
       onStateChange:(e)=>{
         if(e.data===YT.PlayerState.ENDED){updatePlayIcons(false);if(autoplay)playNext()}
         else if(e.data===YT.PlayerState.PLAYING)updatePlayIcons(true);

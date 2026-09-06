@@ -120,6 +120,8 @@ header .browse-btn:hover{background:#c73652}
 .mobile-fs .browse.open{display:flex!important;z-index:10002}
 .mobile-fs .controls{position:absolute;bottom:0;left:0;right:0;background:rgba(22,33,62,.85);z-index:10001;opacity:0;transition:opacity .3s;pointer-events:none}
 .mobile-fs .controls.show-controls{opacity:1;pointer-events:auto}
+.bars-tap{display:none;position:absolute;top:0;left:0;right:0;bottom:0;z-index:5;cursor:pointer}
+.bars-hidden .bars-tap{display:block}
 .fs-tap{display:none}
 .mobile-fs .fs-tap{display:block;position:absolute;top:0;left:0;right:0;bottom:50px;z-index:10000;cursor:pointer}
 .watch-time{position:fixed;bottom:12px;right:12px;background:rgba(22,33,62,.85);backdrop-filter:blur(6px);color:#ccc;font-size:.75em;padding:5px 12px;border-radius:12px;z-index:50;pointer-events:none}
@@ -138,6 +140,7 @@ header .browse-btn:hover{background:#c73652}
       <div class="video-wrap" id="videoWrap">
         <div id="playerTarget"></div>
       </div>
+      <div class="bars-tap" onclick="showBars()"></div>
       <div class="fs-tap" id="fsTap" onclick="showMobileControls()"></div>
       <div class="controls">
         <button onclick="playPrev()" title="Previous"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
@@ -365,7 +368,7 @@ function shuffle(){
   renderGrid()
 }
 
-function toggleBrowse(){document.getElementById('browse').classList.toggle('open')}
+function toggleBrowse(){document.getElementById('browse').classList.toggle('open');showBars()}
 
 let mobileFs=false;
 let mobileControlsTimeout;
@@ -469,7 +472,7 @@ function onYouTubeIframeAPIReady(){
       },
       onStateChange:(e)=>{
         if(e.data===YT.PlayerState.ENDED){updatePlayIcons(false);stopWatchTimer();if(autoplay)playNext()}
-        else if(e.data===YT.PlayerState.PLAYING){updatePlayIcons(true);startWatchTimer()}
+        else if(e.data===YT.PlayerState.PLAYING){updatePlayIcons(true);startWatchTimer();startBarsAutoHide()}
         else if(e.data===YT.PlayerState.PAUSED){updatePlayIcons(false);stopWatchTimer()}
       }
     }
@@ -512,27 +515,31 @@ updateWatchDisplay();
 
 // ── Auto-hide header + controls bars ──
 let barsTimeout=null;
+let barsActive=false;
 
 function showBars(){
   document.body.classList.remove('bars-hidden');
+  resetBarsTimer();
+}
+
+function resetBarsTimer(){
   clearTimeout(barsTimeout);
-  barsTimeout=setTimeout(hideBars,10000);
+  if(barsActive)barsTimeout=setTimeout(hideBars,10000);
 }
 
 function hideBars(){
   if(document.getElementById('browse').classList.contains('open'))return;
+  if(mobileFs)return;
   document.body.classList.add('bars-hidden');
 }
 
-function onVideoTap(){
-  if(document.body.classList.contains('bars-hidden')){showBars()}
-  else{hideBars()}
+function startBarsAutoHide(){
+  barsActive=true;
+  resetBarsTimer();
 }
 
-document.getElementById('videoWrap').addEventListener('click',onVideoTap);
-document.querySelector('.controls').addEventListener('click',()=>{clearTimeout(barsTimeout);barsTimeout=setTimeout(hideBars,10000)});
-document.querySelector('header').addEventListener('click',()=>{clearTimeout(barsTimeout);barsTimeout=setTimeout(hideBars,10000)});
-barsTimeout=setTimeout(hideBars,10000);
+document.querySelector('.controls').addEventListener('click',resetBarsTimer);
+document.querySelector('header').addEventListener('click',resetBarsTimer);
 </script>
 </body>
 </html>

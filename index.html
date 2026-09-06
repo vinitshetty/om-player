@@ -9,9 +9,9 @@
 body{font-family:'Segoe UI',system-ui,sans-serif;background:#1a1a2e;color:#eee;overflow:hidden;height:100vh;height:100dvh;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
 
 .app{display:grid;grid-template-rows:auto 1fr;height:100vh;height:100dvh}
-.bars-hidden .app{grid-template-rows:0 1fr}
-header{background:#16213e;padding:8px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #0f3460;transition:transform .3s,opacity .3s}
-.bars-hidden header{transform:translateY(-100%);opacity:0;pointer-events:none;position:absolute;top:0;left:0;right:0;z-index:10}
+.cinema .app{grid-template-rows:1fr}
+.cinema header,.cinema .controls{display:none}
+header{background:#16213e;padding:8px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #0f3460}
 header h1{font-size:1.2em;color:#e94560}
 header .browse-btn{font-size:.8em;color:#fff;background:#e94560;border:none;padding:6px 14px;border-radius:16px;cursor:pointer;transition:background .2s}
 header .browse-btn:hover{background:#c73652}
@@ -23,8 +23,7 @@ header .browse-btn:hover{background:#c73652}
 .video-wrap iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0}
 
 /* Controls bar */
-.controls{display:flex;align-items:center;gap:8px;padding:10px 16px;background:#16213e;flex-shrink:0;transition:transform .3s,opacity .3s}
-.bars-hidden .controls{transform:translateY(100%);opacity:0;pointer-events:none}
+.controls{display:flex;align-items:center;gap:8px;padding:10px 16px;background:#16213e;flex-shrink:0}
 .controls button{background:#0f3460;color:#fff;border:none;width:44px;height:44px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;transition:background .2s;flex-shrink:0}
 .controls button svg{width:20px;height:20px}
 .controls button:hover{background:#e94560}
@@ -120,10 +119,11 @@ header .browse-btn:hover{background:#c73652}
 .mobile-fs .browse.open{display:flex!important;z-index:10002}
 .mobile-fs .controls{position:absolute;bottom:0;left:0;right:0;background:rgba(22,33,62,.85);z-index:10001;opacity:0;transition:opacity .3s;pointer-events:none}
 .mobile-fs .controls.show-controls{opacity:1;pointer-events:auto}
-.bars-tap{display:none;position:absolute;top:0;left:0;right:0;bottom:0;z-index:5;cursor:pointer}
-.bars-hidden .bars-tap{display:block}
 .fs-tap{display:none}
 .mobile-fs .fs-tap{display:block;position:absolute;top:0;left:0;right:0;bottom:50px;z-index:10000;cursor:pointer}
+.cinema-btn{position:fixed;top:10px;right:10px;z-index:50;width:36px;height:36px;border-radius:50%;border:none;background:rgba(22,33,62,.7);color:#ccc;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s}
+.cinema-btn:hover{background:rgba(233,69,96,.8);color:#fff}
+.cinema .cinema-btn{top:10px;background:rgba(233,69,96,.8);color:#fff}
 .watch-time{position:fixed;bottom:12px;right:12px;background:rgba(22,33,62,.85);backdrop-filter:blur(6px);color:#ccc;font-size:.75em;padding:5px 12px;border-radius:12px;z-index:50;pointer-events:none}
 .watch-time span{color:#e94560;font-weight:600}
 .mobile-fs .watch-time{display:none}
@@ -140,7 +140,6 @@ header .browse-btn:hover{background:#c73652}
       <div class="video-wrap" id="videoWrap">
         <div id="playerTarget"></div>
       </div>
-      <div class="bars-tap" onclick="showBars()"></div>
       <div class="fs-tap" id="fsTap" onclick="showMobileControls()"></div>
       <div class="controls">
         <button onclick="playPrev()" title="Previous"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
@@ -164,6 +163,7 @@ header .browse-btn:hover{background:#c73652}
     </div>
   </div>
 </div>
+<button class="cinema-btn" id="cinemaBtn" onclick="toggleCinema()" title="Cinema mode"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></button>
 <div class="watch-time" id="watchTime">Today: <span id="watchVal">0m</span></div>
 
 <!-- Browse overlay -->
@@ -472,7 +472,7 @@ function onYouTubeIframeAPIReady(){
       },
       onStateChange:(e)=>{
         if(e.data===YT.PlayerState.ENDED){updatePlayIcons(false);stopWatchTimer();if(autoplay)playNext()}
-        else if(e.data===YT.PlayerState.PLAYING){updatePlayIcons(true);startWatchTimer();startBarsAutoHide()}
+        else if(e.data===YT.PlayerState.PLAYING){updatePlayIcons(true);startWatchTimer()}
         else if(e.data===YT.PlayerState.PAUSED){updatePlayIcons(false);stopWatchTimer()}
       }
     }
@@ -513,33 +513,10 @@ function stopWatchTimer(){
 
 updateWatchDisplay();
 
-// ── Auto-hide header + controls bars ──
-let barsTimeout=null;
-let barsActive=false;
-
-function showBars(){
-  document.body.classList.remove('bars-hidden');
-  resetBarsTimer();
+// ── Cinema mode toggle ──
+function toggleCinema(){
+  document.body.classList.toggle('cinema');
 }
-
-function resetBarsTimer(){
-  clearTimeout(barsTimeout);
-  if(barsActive)barsTimeout=setTimeout(hideBars,10000);
-}
-
-function hideBars(){
-  if(document.getElementById('browse').classList.contains('open'))return;
-  if(mobileFs)return;
-  document.body.classList.add('bars-hidden');
-}
-
-function startBarsAutoHide(){
-  barsActive=true;
-  resetBarsTimer();
-}
-
-document.querySelector('.controls').addEventListener('click',resetBarsTimer);
-document.querySelector('header').addEventListener('click',resetBarsTimer);
 </script>
 </body>
 </html>

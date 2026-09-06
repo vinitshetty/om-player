@@ -347,6 +347,8 @@ function showFsControls(){
 function onFsChange(){
   const isFs=!!document.fullscreenElement||!!document.webkitFullscreenElement;
   const fc=document.getElementById('fsControls');
+  document.getElementById('fsBtn').style.display=isFs?'none':'';
+  document.getElementById('exitFsBtn').style.display=isFs?'':'none';
   if(isFs){
     showFsControls();
     document.querySelector('.player-area').addEventListener('mousemove',showFsControls);

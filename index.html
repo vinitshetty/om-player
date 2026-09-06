@@ -16,8 +16,8 @@ header .info{font-size:.8em;color:#999}
 .main{display:grid;grid-template-columns:1fr 340px;overflow:hidden}
 
 /* Player area */
-.player-area{display:flex;flex-direction:column;background:#000;position:relative;min-height:0}
-.video-wrap{position:relative;width:100%;padding-top:56.25%;background:#000;flex-shrink:0}
+.player-area{display:flex;flex-direction:column;background:#000;position:relative;min-height:0;overflow:hidden}
+.video-wrap{position:relative;width:100%;padding-top:56.25%;background:#000;flex-shrink:0;overflow:hidden}
 .video-wrap iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0}
 .yt-block-top{position:absolute;top:0;left:0;right:0;height:42px;z-index:10;cursor:default}
 .yt-block-bot{position:absolute;bottom:0;left:0;width:120px;height:36px;z-index:10;cursor:default}
@@ -68,16 +68,17 @@ header .info{font-size:.8em;color:#999}
 
 /* ── Mobile layout ── */
 @media(max-width:900px){
-  .main{grid-template-columns:1fr;grid-template-rows:auto 1fr}
-  .player-area{min-height:0}
+  .main{display:flex;flex-direction:column;overflow:hidden}
+  .player-area{flex-shrink:0}
   .video-wrap{padding-top:56.25%}
   .controls{padding:6px 8px;gap:4px}
   .controls button{width:32px;height:32px}
   .now-playing{font-size:.7em}
   .mob-toggle{display:flex!important}
-  .sidebar{position:fixed;top:0;left:0;right:0;bottom:0;z-index:100;background:#16213e;transform:translateY(100%);transition:transform .3s ease}
+  .sidebar{position:fixed;top:0;left:0;right:0;bottom:0;z-index:100;background:#16213e;transform:translateY(100%);transition:transform .3s ease;border-left:none}
   .sidebar.open{transform:translateY(0)}
   .sidebar-close{display:block!important}
+  header{padding:6px 12px}
   header h1{font-size:1em}
 }
 .sidebar-close{display:none;position:absolute;top:8px;right:10px;background:none;border:none;color:#e94560;font-size:1.5em;cursor:pointer;z-index:101}
@@ -211,6 +212,8 @@ function updatePlayIcons(playing){
   document.getElementById('fsPlayBtn').innerHTML=playing?pauseIconLg:playIconLg;
 }
 
+function isMobile(){return window.innerWidth<=900}
+
 function playIndex(i){
   if(i<0||i>=playlist.length)return;
   currentIdx=i;
@@ -219,7 +222,8 @@ function playIndex(i){
   document.getElementById('nowPlaying').textContent=v.title;
   document.getElementById('fsTitle').textContent=v.title;
   renderList();
-  document.querySelector('.vid-item.playing')?.scrollIntoView({block:'nearest'})
+  document.querySelector('.vid-item.playing')?.scrollIntoView({block:'nearest'});
+  if(isMobile())document.getElementById('sidebar').classList.remove('open')
 }
 
 function playNext(){if(currentIdx<playlist.length-1)playIndex(currentIdx+1);else playIndex(0)}

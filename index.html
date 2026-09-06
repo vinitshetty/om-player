@@ -104,13 +104,15 @@ header .info{font-size:.8em;color:#999}
 }
 /* ── Mobile fake fullscreen ── */
 .mobile-fs .player-area{position:fixed!important;top:0;left:0;right:0;bottom:0;z-index:9999}
-.mobile-fs header,.mobile-fs .sidebar{display:none!important}
+.mobile-fs header{display:none!important}
+.mobile-fs .sidebar{display:none!important}
+.mobile-fs .sidebar.open{display:flex!important;z-index:10002}
 .mobile-fs .video-wrap{padding-top:0;flex:1;min-height:0}
 .mobile-fs .video-wrap iframe{position:absolute;top:0;left:0;width:100%;height:100%}
 .mobile-fs .controls{position:absolute;bottom:0;left:0;right:0;background:rgba(22,33,62,.85);z-index:10001;opacity:0;transition:opacity .3s;pointer-events:none}
 .mobile-fs .controls.show-controls{opacity:1;pointer-events:auto}
 .fs-tap{display:none}
-.mobile-fs .fs-tap{display:block;position:absolute;top:0;left:0;right:0;bottom:0;z-index:10000;cursor:pointer}
+.mobile-fs .fs-tap{display:block;position:absolute;top:0;left:0;right:0;bottom:50px;z-index:10000;cursor:pointer}
 .sidebar-close{display:none;position:absolute;top:8px;right:10px;background:none;border:none;color:#e94560;font-size:1.5em;cursor:pointer;z-index:101}
 </style>
 </head>
@@ -333,7 +335,7 @@ function showMobileControls(e){
   const ctrl=document.querySelector('.controls');
   ctrl.classList.add('show-controls');
   clearTimeout(mobileControlsTimeout);
-  mobileControlsTimeout=setTimeout(()=>ctrl.classList.remove('show-controls'),4000);
+  mobileControlsTimeout=setTimeout(()=>ctrl.classList.remove('show-controls'),6000);
 }
 
 let fsTimeout;

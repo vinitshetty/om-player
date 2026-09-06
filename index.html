@@ -2,66 +2,92 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Om's Learning Videos</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Segoe UI',system-ui,sans-serif;background:#1a1a2e;color:#eee;overflow:hidden;height:100vh}
-.app{display:grid;grid-template-rows:auto 1fr;height:100vh}
-header{background:#16213e;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid #0f3460}
-header h1{font-size:1.4em;color:#e94560}
-header .info{font-size:.85em;color:#999}
-.main{display:grid;grid-template-columns:1fr 360px;overflow:hidden}
-@media(max-width:900px){.main{grid-template-columns:1fr}.sidebar{display:none}.sidebar.open{display:flex;position:fixed;top:0;left:0;right:0;bottom:0;z-index:100;background:#16213e}.mob-toggle{display:block!important}}
-.player-area{display:flex;flex-direction:column;background:#000;position:relative}
-.video-wrap{position:relative;width:100%;padding-top:56.25%;background:#000}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#1a1a2e;color:#eee;overflow:hidden;height:100vh;height:100dvh}
+
+/* Desktop: video left, playlist right */
+.app{display:grid;grid-template-rows:auto 1fr;height:100vh;height:100dvh}
+header{background:#16213e;padding:8px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #0f3460}
+header h1{font-size:1.2em;color:#e94560}
+header .info{font-size:.8em;color:#999}
+.main{display:grid;grid-template-columns:1fr 340px;overflow:hidden}
+
+/* Player area */
+.player-area{display:flex;flex-direction:column;background:#000;position:relative;min-height:0}
+.video-wrap{position:relative;width:100%;padding-top:56.25%;background:#000;flex-shrink:0}
 .video-wrap iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0}
 .yt-block-top{position:absolute;top:0;left:0;right:0;height:42px;z-index:10;cursor:default}
 .yt-block-bot{position:absolute;bottom:0;left:0;width:120px;height:36px;z-index:10;cursor:default}
-.controls{display:flex;align-items:center;gap:8px;padding:10px 16px;background:#16213e;flex-wrap:wrap}
-.controls button{background:#0f3460;color:#fff;border:none;width:40px;height:40px;border-radius:50%;cursor:pointer;font-size:1.1em;transition:background .2s;display:flex;align-items:center;justify-content:center;padding:0}
+
+/* Controls bar */
+.controls{display:flex;align-items:center;gap:6px;padding:8px 12px;background:#16213e;flex-shrink:0}
+.controls button{background:#0f3460;color:#fff;border:none;width:36px;height:36px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;transition:background .2s;flex-shrink:0}
 .controls button:hover{background:#e94560}
 .controls button.active{background:#e94560}
-.controls button.text-btn{width:auto;border-radius:8px;padding:6px 14px;font-size:.8em}
-.now-playing{flex:1;min-width:120px;font-size:.85em;color:#ccc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.mob-toggle{display:none;background:#e94560!important}
-.fs-controls{display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:2147483647;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);border-radius:30px;padding:8px 16px;gap:12px;align-items:center;opacity:0;transition:opacity .3s}
-.fs-controls.visible{display:flex;opacity:1}
-.fs-controls button{background:rgba(255,255,255,.15);color:#fff;border:none;width:44px;height:44px;border-radius:50%;cursor:pointer;font-size:1.2em;display:flex;align-items:center;justify-content:center;transition:background .2s}
-.fs-controls button:hover{background:rgba(255,255,255,.3)}
-.fs-controls .fs-title{color:#fff;font-size:.8em;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.controls button.text-btn{width:auto;border-radius:8px;padding:4px 10px;font-size:.75em}
+.now-playing{flex:1;min-width:0;font-size:.8em;color:#ccc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin:0 4px}
+
+/* Sidebar */
 .sidebar{display:flex;flex-direction:column;background:#16213e;border-left:2px solid #0f3460;overflow:hidden}
-.cat-bar{padding:10px;border-bottom:1px solid #0f3460;max-height:200px;overflow-y:auto}
-.cat-bar h3{font-size:.8em;color:#e94560;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px}
-.cat-pills{display:flex;flex-wrap:wrap;gap:4px}
-.cat-pill{font-size:.7em;padding:3px 8px;border-radius:12px;border:1px solid #0f3460;background:transparent;color:#aaa;cursor:pointer;transition:all .2s}
-.cat-pill:hover{border-color:#e94560;color:#fff}
-.cat-pill.active{background:#e94560;border-color:#e94560;color:#fff}
-.video-list{flex:1;overflow-y:auto;padding:4px 0}
-.video-list::-webkit-scrollbar{width:6px}
-.video-list::-webkit-scrollbar-thumb{background:#0f3460;border-radius:3px}
-.vid-item{display:flex;align-items:center;gap:10px;padding:8px 12px;cursor:pointer;border-bottom:1px solid #0f3460;transition:background .15s}
-.vid-item:hover{background:#0f3460}
-.vid-item.playing{background:#e94560;color:#fff}
-.vid-item .num{font-size:.75em;color:#666;min-width:24px;text-align:right}
-.vid-item.playing .num{color:#fff}
-.vid-item .meta{flex:1;overflow:hidden}
-.vid-item .title{font-size:.82em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.vid-item .cat{font-size:.65em;color:#888;margin-top:2px}
-.vid-item.playing .cat{color:#fcc}
-.vid-item .dur{font-size:.7em;color:#666;min-width:32px;text-align:right}
-.vid-item.playing .dur{color:#fcc}
 .search-box{padding:8px 10px;border-bottom:1px solid #0f3460}
 .search-box input{width:100%;padding:6px 10px;border-radius:6px;border:1px solid #0f3460;background:#1a1a2e;color:#eee;font-size:.85em;outline:none}
 .search-box input:focus{border-color:#e94560}
-.count-bar{padding:6px 12px;font-size:.7em;color:#888;border-bottom:1px solid #0f3460;text-align:center}
+.group-bar{padding:8px 10px;border-bottom:1px solid #0f3460}
+.group-pills{display:flex;flex-wrap:wrap;gap:4px}
+.group-pill{font-size:.75em;padding:4px 12px;border-radius:14px;border:1px solid #0f3460;background:transparent;color:#aaa;cursor:pointer;transition:all .2s}
+.group-pill:hover{border-color:#e94560;color:#fff}
+.group-pill.active{background:#e94560;border-color:#e94560;color:#fff}
+.count-bar{padding:5px 12px;font-size:.7em;color:#888;border-bottom:1px solid #0f3460;text-align:center}
+.video-list{flex:1;overflow-y:auto;padding:4px 0}
+.video-list::-webkit-scrollbar{width:6px}
+.video-list::-webkit-scrollbar-thumb{background:#0f3460;border-radius:3px}
+.vid-item{display:flex;align-items:center;gap:8px;padding:8px 10px;cursor:pointer;border-bottom:1px solid #0f3460;transition:background .15s}
+.vid-item:hover{background:#0f3460}
+.vid-item.playing{background:#e94560;color:#fff}
+.vid-item .num{font-size:.7em;color:#666;min-width:22px;text-align:right}
+.vid-item.playing .num{color:#fff}
+.vid-item .meta{flex:1;overflow:hidden}
+.vid-item .title{font-size:.8em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vid-item .cat{font-size:.6em;color:#888;margin-top:1px}
+.vid-item.playing .cat{color:#fcc}
+.vid-item .dur{font-size:.65em;color:#666;min-width:28px;text-align:right}
+.vid-item.playing .dur{color:#fcc}
+
+/* Fullscreen overlay controls */
+.fs-controls{display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:2147483647;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);border-radius:28px;padding:8px 16px;gap:10px;align-items:center;opacity:0;transition:opacity .3s}
+.fs-controls.visible{display:flex;opacity:1}
+.fs-controls button{background:rgba(255,255,255,.15);color:#fff;border:none;width:42px;height:42px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s}
+.fs-controls button:hover{background:rgba(255,255,255,.3)}
+.fs-controls .fs-title{color:#fff;font-size:.8em;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* Mobile toggle */
+.mob-toggle{display:none!important}
+
+/* ── Mobile layout ── */
+@media(max-width:900px){
+  .main{grid-template-columns:1fr;grid-template-rows:auto 1fr}
+  .player-area{min-height:0}
+  .video-wrap{padding-top:56.25%}
+  .controls{padding:6px 8px;gap:4px}
+  .controls button{width:32px;height:32px}
+  .now-playing{font-size:.7em}
+  .mob-toggle{display:flex!important}
+  .sidebar{position:fixed;top:0;left:0;right:0;bottom:0;z-index:100;background:#16213e;transform:translateY(100%);transition:transform .3s ease}
+  .sidebar.open{transform:translateY(0)}
+  .sidebar-close{display:block!important}
+  header h1{font-size:1em}
+}
+.sidebar-close{display:none;position:absolute;top:8px;right:10px;background:none;border:none;color:#e94560;font-size:1.5em;cursor:pointer;z-index:101}
 </style>
 </head>
 <body>
 <div class="app">
   <header>
     <h1>Om's Learning Videos</h1>
-    <span class="info" id="headerInfo">335 videos</span>
+    <span class="info" id="headerInfo"></span>
   </header>
   <div class="main">
     <div class="player-area">
@@ -71,13 +97,13 @@ header .info{font-size:.85em;color:#999}
         <div class="yt-block-bot"></div>
       </div>
       <div class="controls">
-        <button onclick="playPrev()" title="Previous"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
-        <button onclick="togglePlay()" id="playBtn" title="Play/Pause"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6zm8-14v14h4V5z"/></svg></button>
-        <button onclick="playNext()" title="Next"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6zm8.5 0h2V6h-2z"/></svg></button>
-        <button onclick="shuffle()" id="shuffleBtn" title="Shuffle"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg></button>
+        <button onclick="playPrev()" title="Previous"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
+        <button onclick="togglePlay()" id="playBtn" title="Play/Pause"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6zm8-14v14h4V5z"/></svg></button>
+        <button onclick="playNext()" title="Next"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6zm8.5 0h2V6h-2z"/></svg></button>
+        <button onclick="shuffle()" id="shuffleBtn" title="Shuffle"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg></button>
         <button onclick="toggleAutoplay()" id="autoBtn" class="active text-btn" title="Auto-play">Auto</button>
-        <button onclick="goFullscreen()" title="Fullscreen"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></button>
-        <button class="mob-toggle text-btn" onclick="toggleSidebar()">Playlist</button>
+        <button onclick="goFullscreen()" title="Fullscreen"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></button>
+        <button class="mob-toggle text-btn" onclick="toggleSidebar()"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg></button>
         <div class="now-playing" id="nowPlaying"></div>
       </div>
       <div class="fs-controls" id="fsControls">
@@ -90,14 +116,12 @@ header .info{font-size:.85em;color:#999}
       </div>
     </div>
     <div class="sidebar" id="sidebar">
-      <div class="search-box"><input type="text" id="searchInput" placeholder="Filter videos..." oninput="filterList()"></div>
-      <div class="cat-bar">
-        <h3>Subject</h3>
-        <div class="cat-pills" id="groupPills"></div>
-        <h3 style="margin-top:8px">Category</h3>
-        <div class="cat-pills" id="catPills"></div>
+      <button class="sidebar-close" onclick="toggleSidebar()">&times;</button>
+      <div class="search-box"><input type="text" id="searchInput" placeholder="Search videos..." oninput="filterList()"></div>
+      <div class="group-bar">
+        <div class="group-pills" id="groupPills"></div>
       </div>
-      <div class="count-bar" id="countBar">335 videos</div>
+      <div class="count-bar" id="countBar"></div>
       <div class="video-list" id="videoList"></div>
     </div>
   </div>
@@ -115,63 +139,35 @@ let loaded=false;
 function init(){
   playlist=[...VIDEOS];
   loaded=true;
-  initCats();
+  initGroups();
   filterList();
   const tag=document.createElement('script');
   tag.src='https://www.youtube.com/iframe_api';
   document.head.appendChild(tag);
 }
+
 let currentIdx=0;
 let autoplay=true;
 let shuffled=false;
 let player;
 let activeGroup='';
-let activeCats=new Set();
 
-function initCats(){
+function initGroups(){
   const groups=[...new Set(VIDEOS.map(v=>v.group||'Other'))];
-  const gEl=document.getElementById('groupPills');
-  const allG=document.createElement('span');
-  allG.className='cat-pill active';
-  allG.textContent='All';
-  allG.onclick=()=>{activeGroup='';gEl.querySelectorAll('.cat-pill').forEach(p=>p.classList.remove('active'));allG.classList.add('active');activeCats.clear();rebuildCatPills();filterList()};
-  gEl.appendChild(allG);
+  const el=document.getElementById('groupPills');
+  const allPill=document.createElement('span');
+  allPill.className='group-pill active';
+  allPill.textContent='All';
+  allPill.onclick=()=>{activeGroup='';el.querySelectorAll('.group-pill').forEach(p=>p.classList.remove('active'));allPill.classList.add('active');filterList()};
+  el.appendChild(allPill);
   groups.forEach(g=>{
     const p=document.createElement('span');
-    p.className='cat-pill';
+    p.className='group-pill';
     p.textContent=g;
     p.onclick=()=>{
       activeGroup=activeGroup===g?'':g;
-      gEl.querySelectorAll('.cat-pill').forEach(x=>x.classList.remove('active'));
-      if(activeGroup)p.classList.add('active');else allG.classList.add('active');
-      activeCats.clear();
-      rebuildCatPills();
-      filterList()
-    };
-    gEl.appendChild(p)
-  });
-  rebuildCatPills()
-}
-
-function rebuildCatPills(){
-  const el=document.getElementById('catPills');
-  el.innerHTML='';
-  const filtered=activeGroup?VIDEOS.filter(v=>(v.group||'Other')===activeGroup):VIDEOS;
-  const cats=[...new Set(filtered.map(v=>v.cat))];
-  const allPill=document.createElement('span');
-  allPill.className='cat-pill active';
-  allPill.textContent='All';
-  allPill.onclick=()=>{activeCats.clear();el.querySelectorAll('.cat-pill').forEach(p=>p.classList.remove('active'));allPill.classList.add('active');filterList()};
-  el.appendChild(allPill);
-  cats.forEach(c=>{
-    const p=document.createElement('span');
-    p.className='cat-pill';
-    p.textContent=c;
-    p.onclick=()=>{
-      allPill.classList.remove('active');
-      if(activeCats.has(c)){activeCats.delete(c);p.classList.remove('active')}
-      else{activeCats.add(c);p.classList.add('active')}
-      if(!activeCats.size)allPill.classList.add('active');
+      el.querySelectorAll('.group-pill').forEach(x=>x.classList.remove('active'));
+      if(activeGroup)p.classList.add('active');else allPill.classList.add('active');
       filterList()
     };
     el.appendChild(p)
@@ -182,8 +178,7 @@ function filterList(){
   const q=document.getElementById('searchInput').value.toLowerCase();
   playlist=VIDEOS.filter(v=>{
     if(activeGroup&&(v.group||'Other')!==activeGroup)return false;
-    if(activeCats.size&&!activeCats.has(v.cat))return false;
-    if(q&&!v.title.toLowerCase().includes(q)&&!v.cat.toLowerCase().includes(q))return false;
+    if(q&&!v.title.toLowerCase().includes(q)&&!v.cat.toLowerCase().includes(q)&&!(v.group||'').toLowerCase().includes(q))return false;
     return true
   });
   currentIdx=0;
@@ -206,8 +201,8 @@ function renderList(){
 
 function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 
-const playIcon='<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
-const pauseIcon='<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6zm8-14v14h4V5z"/></svg>';
+const playIcon='<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+const pauseIcon='<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6zm8-14v14h4V5z"/></svg>';
 const playIconLg='<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
 const pauseIconLg='<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6zm8-14v14h4V5z"/></svg>';
 
@@ -238,9 +233,7 @@ function togglePlay(){
 
 function toggleAutoplay(){
   autoplay=!autoplay;
-  const b=document.getElementById('autoBtn');
-  b.textContent=autoplay?'Auto':'Auto';
-  b.classList.toggle('active',autoplay)
+  document.getElementById('autoBtn').classList.toggle('active',autoplay)
 }
 
 function shuffle(){
@@ -301,7 +294,7 @@ function onYouTubeIframeAPIReady(){
     host:'https://www.youtube-nocookie.com',
     playerVars:{
       autoplay:1,rel:0,modestbranding:1,fs:0,
-      disablekb:0,iv_load_policy:3,
+      disablekb:0,iv_load_policy:3,playsinline:1,
       origin:location.origin
     },
     events:{
@@ -315,7 +308,7 @@ function onYouTubeIframeAPIReady(){
   })
 }
 
-if(loaded){initCats();filterList()}
+if(loaded){initGroups();filterList()}
 </script>
 </body>
 </html>

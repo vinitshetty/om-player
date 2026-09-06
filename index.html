@@ -64,12 +64,8 @@ header .info{font-size:.8em;color:#999}
 /* Mobile toggle */
 .mob-toggle{display:none!important}
 
-/* ── Tablet layout (iPad portrait) ── */
-@media(max-width:1024px){
-  .main{grid-template-columns:1fr 280px}
-}
-/* ── Mobile layout ── */
-@media(max-width:900px){
+/* ── Tablet & Mobile layout ── */
+@media(max-width:1200px){
   .main{display:flex;flex-direction:column;overflow:hidden}
   .player-area{flex-shrink:0}
   .video-wrap{padding-top:56.25%}
@@ -90,8 +86,8 @@ header .info{font-size:.8em;color:#999}
   .controls{gap:2px;padding:4px 6px}
   .now-playing{display:none}
 }
-/* ── Mobile landscape ── */
-@media(max-width:900px) and (orientation:landscape){
+/* ── Mobile/Tablet landscape ── */
+@media(max-width:1200px) and (orientation:landscape){
   header{display:none}
   .app{grid-template-rows:1fr}
   .player-area{flex:1;min-height:0}
@@ -244,7 +240,7 @@ function updatePlayIcons(playing){
   document.getElementById('fsPlayBtn').innerHTML=playing?pauseIconLg:playIconLg;
 }
 
-function isMobile(){return window.innerWidth<=900}
+function isMobile(){return window.innerWidth<=1200}
 
 function playIndex(i){
   if(i<0||i>=playlist.length)return;

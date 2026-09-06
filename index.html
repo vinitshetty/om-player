@@ -121,9 +121,11 @@ header .browse-btn:hover{background:#c73652}
 .mobile-fs .controls.show-controls{opacity:1;pointer-events:auto}
 .fs-tap{display:none}
 .mobile-fs .fs-tap{display:block;position:absolute;top:0;left:0;right:0;bottom:50px;z-index:10000;cursor:pointer}
-.cinema-btn{position:fixed;top:10px;right:10px;z-index:50;width:36px;height:36px;border-radius:50%;border:none;background:rgba(22,33,62,.7);color:#ccc;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s}
-.cinema-btn:hover{background:rgba(233,69,96,.8);color:#fff}
-.cinema .cinema-btn{top:10px;background:rgba(233,69,96,.8);color:#fff}
+.header-right{display:flex;align-items:center;gap:8px}
+.cinema-btn{width:36px;height:36px;border-radius:50%;border:none;background:#0f3460;color:#ccc;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s}
+.cinema-btn:hover{background:#e94560;color:#fff}
+.cinema-float{position:fixed;top:10px;right:10px;z-index:50;background:rgba(233,69,96,.85);color:#fff;display:none}
+.cinema .cinema-float{display:flex}
 .watch-time{position:fixed;bottom:12px;right:12px;background:rgba(22,33,62,.85);backdrop-filter:blur(6px);color:#ccc;font-size:.75em;padding:5px 12px;border-radius:12px;z-index:50;pointer-events:none}
 .watch-time span{color:#e94560;font-weight:600}
 .mobile-fs .watch-time{display:none}
@@ -133,7 +135,10 @@ header .browse-btn:hover{background:#c73652}
 <div class="app">
   <header>
     <h1>Om's Learning Videos</h1>
-    <button class="browse-btn" id="headerInfo" onclick="toggleBrowse()"></button>
+    <div class="header-right">
+      <button class="browse-btn" id="headerInfo" onclick="toggleBrowse()"></button>
+      <button class="cinema-btn" onclick="toggleCinema()" title="Cinema mode"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></button>
+    </div>
   </header>
   <div class="main">
     <div class="player-area">
@@ -147,8 +152,6 @@ header .browse-btn:hover{background:#c73652}
         <button onclick="playNext()" title="Next"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6zm8.5 0h2V6h-2z"/></svg></button>
         <button onclick="shuffle()" id="shuffleBtn" title="Shuffle"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg></button>
         <button onclick="toggleAutoplay()" id="autoBtn" class="active text-btn" title="Auto-play">Auto</button>
-        <button onclick="goFullscreen()" id="fsBtn" title="Fullscreen"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></button>
-        <button onclick="exitFullscreen()" id="exitFsBtn" style="display:none" title="Exit Fullscreen"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg></button>
         <button onclick="toggleBrowse()" id="browseBtn" title="Browse Videos"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/></svg></button>
         <div class="now-playing" id="nowPlaying"></div>
       </div>
@@ -163,7 +166,7 @@ header .browse-btn:hover{background:#c73652}
     </div>
   </div>
 </div>
-<button class="cinema-btn" id="cinemaBtn" onclick="toggleCinema()" title="Cinema mode"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></button>
+<button class="cinema-btn cinema-float" onclick="toggleCinema()" title="Exit cinema mode"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg></button>
 <div class="watch-time" id="watchTime">Today: <span id="watchVal">0m</span></div>
 
 <!-- Browse overlay -->

@@ -104,8 +104,6 @@ header .browse-btn:hover{background:#c73652}
 }
 /* ── Landscape ── */
 @media(max-width:1200px) and (orientation:landscape){
-  header{display:none}
-  .app{grid-template-rows:1fr}
   .player-area{flex:1;min-height:0}
   .controls{padding:2px 8px;gap:3px}
   .controls button{width:28px;height:28px}
@@ -225,6 +223,8 @@ function fetchFresh(required){
 
 loadVideos();
 
+let firstVisit=true;
+
 function init(){
   playlist=[...VIDEOS];
   loaded=true;
@@ -234,6 +234,8 @@ function init(){
   const tag=document.createElement('script');
   tag.src='https://www.youtube.com/iframe_api';
   document.head.appendChild(tag);
+  // Show browse on first load
+  document.getElementById('browse').classList.add('open');
 }
 
 function thumb(id){return 'https://img.youtube.com/vi/'+id+'/mqdefault.jpg'}
@@ -453,7 +455,7 @@ function onYouTubeIframeAPIReady(){
     videoId:playlist[currentIdx].id,
     host:'https://www.youtube-nocookie.com',
     playerVars:{
-      autoplay:1,rel:0,modestbranding:1,fs:0,
+      autoplay:0,rel:0,modestbranding:1,fs:0,
       disablekb:0,iv_load_policy:3,playsinline:1,
       origin:location.origin
     },

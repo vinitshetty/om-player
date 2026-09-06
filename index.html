@@ -9,7 +9,9 @@
 body{font-family:'Segoe UI',system-ui,sans-serif;background:#1a1a2e;color:#eee;overflow:hidden;height:100vh;height:100dvh;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
 
 .app{display:grid;grid-template-rows:auto 1fr;height:100vh;height:100dvh}
-header{background:#16213e;padding:8px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #0f3460}
+.bars-hidden .app{grid-template-rows:0 1fr}
+header{background:#16213e;padding:8px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #0f3460;transition:transform .3s,opacity .3s}
+.bars-hidden header{transform:translateY(-100%);opacity:0;pointer-events:none;position:absolute;top:0;left:0;right:0;z-index:10}
 header h1{font-size:1.2em;color:#e94560}
 header .browse-btn{font-size:.8em;color:#fff;background:#e94560;border:none;padding:6px 14px;border-radius:16px;cursor:pointer;transition:background .2s}
 header .browse-btn:hover{background:#c73652}
@@ -21,7 +23,8 @@ header .browse-btn:hover{background:#c73652}
 .video-wrap iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0}
 
 /* Controls bar */
-.controls{display:flex;align-items:center;gap:8px;padding:10px 16px;background:#16213e;flex-shrink:0}
+.controls{display:flex;align-items:center;gap:8px;padding:10px 16px;background:#16213e;flex-shrink:0;transition:transform .3s,opacity .3s}
+.bars-hidden .controls{transform:translateY(100%);opacity:0;pointer-events:none}
 .controls button{background:#0f3460;color:#fff;border:none;width:44px;height:44px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;transition:background .2s;flex-shrink:0}
 .controls button svg{width:20px;height:20px}
 .controls button:hover{background:#e94560}
@@ -506,6 +509,30 @@ function stopWatchTimer(){
 }
 
 updateWatchDisplay();
+
+// ── Auto-hide header + controls bars ──
+let barsTimeout=null;
+
+function showBars(){
+  document.body.classList.remove('bars-hidden');
+  clearTimeout(barsTimeout);
+  barsTimeout=setTimeout(hideBars,10000);
+}
+
+function hideBars(){
+  if(document.getElementById('browse').classList.contains('open'))return;
+  document.body.classList.add('bars-hidden');
+}
+
+function onVideoTap(){
+  if(document.body.classList.contains('bars-hidden')){showBars()}
+  else{hideBars()}
+}
+
+document.getElementById('videoWrap').addEventListener('click',onVideoTap);
+document.querySelector('.controls').addEventListener('click',()=>{clearTimeout(barsTimeout);barsTimeout=setTimeout(hideBars,10000)});
+document.querySelector('header').addEventListener('click',()=>{clearTimeout(barsTimeout);barsTimeout=setTimeout(hideBars,10000)});
+barsTimeout=setTimeout(hideBars,10000);
 </script>
 </body>
 </html>

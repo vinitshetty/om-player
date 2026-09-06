@@ -54,7 +54,7 @@ header .info{font-size:.85em;color:#999}
 <body>
 <div class="app">
   <header>
-    <h1>Om's Math Videos</h1>
+    <h1>Om's Learning Videos</h1>
     <span class="info" id="headerInfo">335 videos</span>
   </header>
   <div class="main">
@@ -77,7 +77,9 @@ header .info{font-size:.85em;color:#999}
     <div class="sidebar" id="sidebar">
       <div class="search-box"><input type="text" id="searchInput" placeholder="Filter videos..." oninput="filterList()"></div>
       <div class="cat-bar">
-        <h3>Categories</h3>
+        <h3>Subject</h3>
+        <div class="cat-pills" id="groupPills"></div>
+        <h3 style="margin-top:8px">Category</h3>
         <div class="cat-pills" id="catPills"></div>
       </div>
       <div class="count-bar" id="countBar">335 videos</div>
@@ -108,23 +110,50 @@ let currentIdx=0;
 let autoplay=true;
 let shuffled=false;
 let player;
+let activeGroup='';
 let activeCats=new Set();
 
-const cats=[...new Set(VIDEOS.map(v=>v.cat))];
-
 function initCats(){
+  const groups=[...new Set(VIDEOS.map(v=>v.group||'Other'))];
+  const gEl=document.getElementById('groupPills');
+  const allG=document.createElement('span');
+  allG.className='cat-pill active';
+  allG.textContent='All';
+  allG.onclick=()=>{activeGroup='';gEl.querySelectorAll('.cat-pill').forEach(p=>p.classList.remove('active'));allG.classList.add('active');activeCats.clear();rebuildCatPills();filterList()};
+  gEl.appendChild(allG);
+  groups.forEach(g=>{
+    const p=document.createElement('span');
+    p.className='cat-pill';
+    p.textContent=g;
+    p.onclick=()=>{
+      activeGroup=activeGroup===g?'':g;
+      gEl.querySelectorAll('.cat-pill').forEach(x=>x.classList.remove('active'));
+      if(activeGroup)p.classList.add('active');else allG.classList.add('active');
+      activeCats.clear();
+      rebuildCatPills();
+      filterList()
+    };
+    gEl.appendChild(p)
+  });
+  rebuildCatPills()
+}
+
+function rebuildCatPills(){
   const el=document.getElementById('catPills');
+  el.innerHTML='';
+  const filtered=activeGroup?VIDEOS.filter(v=>(v.group||'Other')===activeGroup):VIDEOS;
+  const cats=[...new Set(filtered.map(v=>v.cat))];
   const allPill=document.createElement('span');
   allPill.className='cat-pill active';
   allPill.textContent='All';
-  allPill.onclick=()=>{activeCats.clear();document.querySelectorAll('.cat-pill').forEach(p=>p.classList.remove('active'));allPill.classList.add('active');filterList()};
+  allPill.onclick=()=>{activeCats.clear();el.querySelectorAll('.cat-pill').forEach(p=>p.classList.remove('active'));allPill.classList.add('active');filterList()};
   el.appendChild(allPill);
   cats.forEach(c=>{
     const p=document.createElement('span');
     p.className='cat-pill';
     p.textContent=c;
     p.onclick=()=>{
-      document.querySelector('.cat-pill.active:first-child')?.classList.remove('active');
+      allPill.classList.remove('active');
       if(activeCats.has(c)){activeCats.delete(c);p.classList.remove('active')}
       else{activeCats.add(c);p.classList.add('active')}
       if(!activeCats.size)allPill.classList.add('active');
@@ -137,13 +166,15 @@ function initCats(){
 function filterList(){
   const q=document.getElementById('searchInput').value.toLowerCase();
   playlist=VIDEOS.filter(v=>{
+    if(activeGroup&&(v.group||'Other')!==activeGroup)return false;
     if(activeCats.size&&!activeCats.has(v.cat))return false;
     if(q&&!v.title.toLowerCase().includes(q)&&!v.cat.toLowerCase().includes(q))return false;
     return true
   });
   currentIdx=0;
   renderList();
-  document.getElementById('countBar').textContent=playlist.length+' videos'
+  document.getElementById('countBar').textContent=playlist.length+' videos';
+  document.getElementById('headerInfo').textContent=playlist.length+' of '+VIDEOS.length+' videos'
 }
 
 function renderList(){

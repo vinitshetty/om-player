@@ -2,11 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Om's Learning Videos</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Segoe UI',system-ui,sans-serif;background:#1a1a2e;color:#eee;overflow:hidden;height:100vh;height:100dvh}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#1a1a2e;color:#eee;overflow:hidden;height:100vh;height:100dvh;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
 
 /* Desktop: video left, playlist right */
 .app{display:grid;grid-template-rows:auto 1fr;height:100vh;height:100dvh}
@@ -57,8 +57,8 @@ header .info{font-size:.8em;color:#999}
 .vid-item.playing .dur{color:#fcc}
 
 /* Fullscreen overlay controls */
-.fs-controls{display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:2147483647;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);border-radius:28px;padding:8px 16px;gap:10px;align-items:center;opacity:0;transition:opacity .3s}
-.fs-controls.visible{display:flex;opacity:1}
+.fs-controls{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:2147483647;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);border-radius:28px;padding:8px 16px;gap:10px;align-items:center;display:flex;opacity:0;pointer-events:none;transition:opacity .3s}
+.fs-controls.visible{opacity:1;pointer-events:auto}
 .fs-controls button{background:rgba(255,255,255,.15);color:#fff;border:none;width:42px;height:42px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s}
 .fs-controls button:hover{background:rgba(255,255,255,.3)}
 .fs-controls .fs-title{color:#fff;font-size:.8em;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -66,12 +66,16 @@ header .info{font-size:.8em;color:#999}
 /* Mobile toggle */
 .mob-toggle{display:none!important}
 
+/* ── Tablet layout (iPad portrait) ── */
+@media(max-width:1024px){
+  .main{grid-template-columns:1fr 280px}
+}
 /* ── Mobile layout ── */
 @media(max-width:900px){
   .main{display:flex;flex-direction:column;overflow:hidden}
   .player-area{flex-shrink:0}
   .video-wrap{padding-top:56.25%}
-  .controls{padding:6px 8px;gap:4px}
+  .controls{padding:6px 8px;gap:4px;flex-wrap:nowrap;overflow-x:auto}
   .controls button{width:32px;height:32px}
   .now-playing{font-size:.7em}
   .mob-toggle{display:flex!important}
@@ -80,6 +84,13 @@ header .info{font-size:.8em;color:#999}
   .sidebar-close{display:block!important}
   header{padding:6px 12px}
   header h1{font-size:1em}
+}
+/* ── Small phones ── */
+@media(max-width:380px){
+  .controls button{width:28px;height:28px}
+  .controls button svg{width:12px;height:12px}
+  .controls{gap:2px;padding:4px 6px}
+  .now-playing{display:none}
 }
 .sidebar-close{display:none;position:absolute;top:8px;right:10px;background:none;border:none;color:#e94560;font-size:1.5em;cursor:pointer;z-index:101}
 </style>
@@ -277,7 +288,7 @@ function showFsControls(){
   fsTimeout=setTimeout(()=>fc.classList.remove('visible'),3000);
 }
 
-document.addEventListener('fullscreenchange',()=>{
+function onFsChange(){
   const isFs=!!document.fullscreenElement||!!document.webkitFullscreenElement;
   const fc=document.getElementById('fsControls');
   if(isFs){
@@ -289,7 +300,9 @@ document.addEventListener('fullscreenchange',()=>{
     document.querySelector('.player-area').removeEventListener('mousemove',showFsControls);
     document.querySelector('.player-area').removeEventListener('touchstart',showFsControls);
   }
-});
+}
+document.addEventListener('fullscreenchange',onFsChange);
+document.addEventListener('webkitfullscreenchange',onFsChange);
 
 function onYouTubeIframeAPIReady(){
   player=new YT.Player('playerTarget',{

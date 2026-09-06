@@ -18,9 +18,8 @@ header .info{font-size:.8em;color:#999}
 /* Player area */
 .player-area{display:flex;flex-direction:column;background:#000;position:relative;min-height:0;overflow:hidden}
 .video-wrap{position:relative;width:100%;padding-top:56.25%;background:#000;flex-shrink:0;overflow:hidden}
-.video-wrap iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0}
-.yt-block-top{position:absolute;top:0;left:0;right:0;height:42px;z-index:10;cursor:default}
-.yt-block-bot{position:absolute;bottom:0;left:0;width:120px;height:36px;z-index:10;cursor:default}
+.video-wrap iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0;pointer-events:none}
+.vid-overlay{position:absolute;top:0;left:0;right:0;bottom:0;z-index:10;cursor:pointer}
 
 /* Controls bar */
 .controls{display:flex;align-items:center;gap:6px;padding:8px 12px;background:#16213e;flex-shrink:0}
@@ -125,9 +124,8 @@ header .info{font-size:.8em;color:#999}
   <div class="main">
     <div class="player-area">
       <div class="video-wrap" id="videoWrap">
-        <div class="yt-block-top"></div>
         <div id="playerTarget"></div>
-        <div class="yt-block-bot"></div>
+        <div class="vid-overlay" onclick="togglePlay()"></div>
       </div>
       <div class="fs-tap" id="fsTap" onclick="showMobileControls()"></div>
       <div class="controls">

@@ -92,6 +92,25 @@ header .info{font-size:.8em;color:#999}
   .controls{gap:2px;padding:4px 6px}
   .now-playing{display:none}
 }
+/* ── Mobile landscape ── */
+@media(max-width:900px) and (orientation:landscape){
+  header{display:none}
+  .app{grid-template-rows:1fr}
+  .player-area{flex:1;min-height:0}
+  .video-wrap{padding-top:0;flex:1;min-height:0}
+  .video-wrap iframe{position:absolute;top:0;left:0;width:100%;height:100%}
+  .controls{padding:2px 8px;gap:3px}
+  .controls button{width:28px;height:28px}
+  .controls button svg{width:12px;height:12px}
+  .now-playing{font-size:.65em}
+}
+/* ── Mobile fake fullscreen ── */
+.mobile-fs .player-area{position:fixed!important;top:0;left:0;right:0;bottom:0;z-index:9999}
+.mobile-fs header,.mobile-fs .sidebar{display:none!important}
+.mobile-fs .video-wrap{padding-top:0;flex:1;min-height:0}
+.mobile-fs .video-wrap iframe{position:absolute;top:0;left:0;width:100%;height:100%}
+.mobile-fs .controls{position:absolute;bottom:0;left:0;right:0;background:rgba(22,33,62,.85);z-index:10000;opacity:0;transition:opacity .3s}
+.mobile-fs .controls.show-controls{opacity:1}
 .sidebar-close{display:none;position:absolute;top:8px;right:10px;background:none;border:none;color:#e94560;font-size:1.5em;cursor:pointer;z-index:101}
 </style>
 </head>
@@ -114,7 +133,8 @@ header .info{font-size:.8em;color:#999}
         <button onclick="playNext()" title="Next"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6zm8.5 0h2V6h-2z"/></svg></button>
         <button onclick="shuffle()" id="shuffleBtn" title="Shuffle"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg></button>
         <button onclick="toggleAutoplay()" id="autoBtn" class="active text-btn" title="Auto-play">Auto</button>
-        <button onclick="goFullscreen()" title="Fullscreen"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></button>
+        <button onclick="goFullscreen()" id="fsBtn" title="Fullscreen"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></button>
+        <button onclick="exitFullscreen()" id="exitFsBtn" style="display:none" title="Exit Fullscreen"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg></button>
         <button class="mob-toggle text-btn" onclick="toggleSidebar()"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg></button>
         <div class="now-playing" id="nowPlaying"></div>
       </div>
@@ -270,14 +290,53 @@ function shuffle(){
 
 function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open')}
 
+let mobileFs=false;
+let mobileControlsTimeout;
+
 function goFullscreen(){
+  if(isMobile()){
+    // CSS-based fullscreen for mobile
+    mobileFs=true;
+    document.querySelector('.app').classList.add('mobile-fs');
+    const ctrl=document.querySelector('.controls');
+    ctrl.classList.add('show-controls');
+    clearTimeout(mobileControlsTimeout);
+    mobileControlsTimeout=setTimeout(()=>ctrl.classList.remove('show-controls'),3000);
+    // Try to lock landscape
+    try{screen.orientation.lock('landscape').catch(()=>{})}catch(e){}
+    document.getElementById('fsBtn').style.display='none';
+    document.getElementById('exitFsBtn').style.display='';
+    // Touch to show controls
+    document.querySelector('.player-area').addEventListener('touchstart',showMobileControls);
+    document.querySelector('.player-area').addEventListener('mousemove',showMobileControls);
+    return;
+  }
   const el=document.querySelector('.player-area');
   if(el.requestFullscreen)el.requestFullscreen();
   else if(el.webkitRequestFullscreen)el.webkitRequestFullscreen();
 }
+
 function exitFullscreen(){
+  if(mobileFs){
+    mobileFs=false;
+    document.querySelector('.app').classList.remove('mobile-fs');
+    document.querySelector('.controls').classList.remove('show-controls');
+    document.querySelector('.player-area').removeEventListener('touchstart',showMobileControls);
+    document.querySelector('.player-area').removeEventListener('mousemove',showMobileControls);
+    document.getElementById('fsBtn').style.display='';
+    document.getElementById('exitFsBtn').style.display='none';
+    try{screen.orientation.unlock()}catch(e){}
+    return;
+  }
   if(document.exitFullscreen)document.exitFullscreen();
   else if(document.webkitExitFullscreen)document.webkitExitFullscreen();
+}
+
+function showMobileControls(){
+  const ctrl=document.querySelector('.controls');
+  ctrl.classList.add('show-controls');
+  clearTimeout(mobileControlsTimeout);
+  mobileControlsTimeout=setTimeout(()=>ctrl.classList.remove('show-controls'),3000);
 }
 
 let fsTimeout;

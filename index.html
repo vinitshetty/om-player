@@ -109,8 +109,10 @@ header .info{font-size:.8em;color:#999}
 .mobile-fs header,.mobile-fs .sidebar{display:none!important}
 .mobile-fs .video-wrap{padding-top:0;flex:1;min-height:0}
 .mobile-fs .video-wrap iframe{position:absolute;top:0;left:0;width:100%;height:100%}
-.mobile-fs .controls{position:absolute;bottom:0;left:0;right:0;background:rgba(22,33,62,.85);z-index:10000;opacity:0;transition:opacity .3s}
-.mobile-fs .controls.show-controls{opacity:1}
+.mobile-fs .controls{position:absolute;bottom:0;left:0;right:0;background:rgba(22,33,62,.85);z-index:10001;opacity:0;transition:opacity .3s;pointer-events:none}
+.mobile-fs .controls.show-controls{opacity:1;pointer-events:auto}
+.fs-tap{display:none}
+.mobile-fs .fs-tap{display:block;position:absolute;top:0;left:0;right:0;bottom:0;z-index:10000;cursor:pointer}
 .sidebar-close{display:none;position:absolute;top:8px;right:10px;background:none;border:none;color:#e94560;font-size:1.5em;cursor:pointer;z-index:101}
 </style>
 </head>
@@ -127,6 +129,7 @@ header .info{font-size:.8em;color:#999}
         <div id="playerTarget"></div>
         <div class="yt-block-bot"></div>
       </div>
+      <div class="fs-tap" id="fsTap" onclick="showMobileControls()"></div>
       <div class="controls">
         <button onclick="playPrev()" title="Previous"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
         <button onclick="togglePlay()" id="playBtn" title="Play/Pause"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6zm8-14v14h4V5z"/></svg></button>
@@ -332,11 +335,12 @@ function exitFullscreen(){
   else if(document.webkitExitFullscreen)document.webkitExitFullscreen();
 }
 
-function showMobileControls(){
+function showMobileControls(e){
+  if(e)e.stopPropagation();
   const ctrl=document.querySelector('.controls');
   ctrl.classList.add('show-controls');
   clearTimeout(mobileControlsTimeout);
-  mobileControlsTimeout=setTimeout(()=>ctrl.classList.remove('show-controls'),3000);
+  mobileControlsTimeout=setTimeout(()=>ctrl.classList.remove('show-controls'),4000);
 }
 
 let fsTimeout;

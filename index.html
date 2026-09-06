@@ -290,10 +290,19 @@ function filterList(keepIdx){
   document.getElementById('headerInfo').textContent='Browse '+VIDEOS.length+' videos'
 }
 
+let thumbObserver=new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const img=e.target;
+      img.src=img.dataset.src;
+      thumbObserver.unobserve(img);
+    }
+  })
+},{rootMargin:'200px'});
+
 function renderGrid(){
   const el=document.getElementById('videoRows');
   el.innerHTML='';
-  // Group by category, preserving playlist order
   const cats=[];
   const catMap={};
   playlist.forEach((v,i)=>{
@@ -301,6 +310,7 @@ function renderGrid(){
     if(!catMap[c]){catMap[c]=[];cats.push(c)}
     catMap[c].push({v,i})
   });
+  const frag=document.createDocumentFragment();
   cats.forEach(cat=>{
     const row=document.createElement('div');
     row.className='cat-row';
@@ -311,13 +321,17 @@ function renderGrid(){
     items.forEach(({v,i})=>{
       const card=document.createElement('div');
       card.className='vcard'+(i===currentIdx?' playing':'');
-      card.innerHTML=`<div class="vcard-thumb"><img src="${thumb(v.id)}" alt="" loading="lazy"><span class="vcard-dur">${v.dur}m</span><div class="vcard-play"><svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg></div></div><div class="vcard-info"><div class="vcard-title">${esc(v.title)}</div></div>`;
+      card.dataset.idx=i;
+      card.innerHTML=`<div class="vcard-thumb"><img data-src="${thumb(v.id)}" alt=""><span class="vcard-dur">${v.dur}m</span><div class="vcard-play"><svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg></div></div><div class="vcard-info"><div class="vcard-title">${esc(v.title)}</div></div>`;
       card.onclick=()=>playIndex(i);
-      scroll.appendChild(card)
+      scroll.appendChild(card);
     });
     row.appendChild(scroll);
-    el.appendChild(row)
-  })
+    frag.appendChild(row);
+  });
+  el.appendChild(frag);
+  // Observe all images for lazy loading
+  el.querySelectorAll('img[data-src]').forEach(img=>thumbObserver.observe(img));
 }
 
 function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
@@ -338,24 +352,13 @@ function playIndex(i){
   if(i<0||i>=playlist.length)return;
   currentIdx=i;
   const v=playlist[i];
-  // Immediate visual feedback
-  const np=document.getElementById('nowPlaying');
-  np.textContent='Loading: '+v.title;
-  np.classList.add('loading');
-  document.getElementById('fsTitle').textContent=v.title;
-  // Highlight clicked card and show spinner
-  document.querySelectorAll('.vcard').forEach((c,idx)=>{
-    c.classList.remove('playing','loading');
-    if(idx===i) c.classList.add('loading');
-  });
-  // Close browse immediately
+  // Close browse and show loading immediately
   document.getElementById('browse').classList.remove('open');
-  // Load video after UI updates
-  requestAnimationFrame(()=>{
-    player.loadVideoById(v.id);
-    np.textContent=v.title;
-    np.classList.remove('loading');
-  });
+  document.getElementById('nowPlaying').textContent='Loading...';
+  document.getElementById('fsTitle').textContent=v.title;
+  // Load video
+  player.loadVideoById(v.id);
+  document.getElementById('nowPlaying').textContent=v.title;
 }
 
 function playNext(){if(currentIdx<playlist.length-1)playIndex(currentIdx+1);else playIndex(0)}
@@ -390,10 +393,7 @@ function shuffle(){
 }
 
 function toggleBrowse(){
-  const b=document.getElementById('browse');
-  const opening=!b.classList.contains('open');
-  b.classList.toggle('open');
-  if(opening)requestAnimationFrame(()=>renderGrid());
+  document.getElementById('browse').classList.toggle('open');
   showBars();
 }
 

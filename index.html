@@ -40,21 +40,30 @@ header .info{font-size:.8em;color:#999}
 .browse-pill:hover{border-color:#e94560;color:#fff}
 .browse-pill.active{background:#e94560;border-color:#e94560;color:#fff}
 .browse-count{padding:6px 16px;font-size:.75em;color:#888;flex-shrink:0}
-.browse-grid{flex:1;overflow-y:auto;padding:8px 12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;align-content:start}
-.browse-grid::-webkit-scrollbar{width:6px}
-.browse-grid::-webkit-scrollbar-thumb{background:#0f3460;border-radius:3px}
+.browse-rows{flex:1;overflow-y:auto;padding:8px 0}
+.browse-rows::-webkit-scrollbar{width:6px}
+.browse-rows::-webkit-scrollbar-thumb{background:#0f3460;border-radius:3px}
+
+/* Category row */
+.cat-row{margin-bottom:20px}
+.cat-row-title{font-size:.9em;font-weight:600;color:#e94560;padding:0 16px 8px;display:flex;align-items:center;gap:8px}
+.cat-row-count{font-size:.7em;color:#666;font-weight:400}
+.cat-row-scroll{display:flex;gap:12px;overflow-x:auto;padding:0 16px 8px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}
+.cat-row-scroll::-webkit-scrollbar{height:4px}
+.cat-row-scroll::-webkit-scrollbar-thumb{background:#0f3460;border-radius:2px}
 
 /* Video card */
-.vcard{position:relative;border-radius:10px;overflow:hidden;cursor:pointer;background:#16213e;transition:transform .2s,box-shadow .2s}
-.vcard:hover{transform:scale(1.03);box-shadow:0 4px 20px rgba(0,0,0,.5)}
+.vcard{flex-shrink:0;width:220px;border-radius:10px;overflow:hidden;cursor:pointer;background:#16213e;transition:transform .2s,box-shadow .2s;scroll-snap-align:start}
+.vcard:hover{transform:scale(1.05);box-shadow:0 4px 20px rgba(0,0,0,.5)}
 .vcard.playing{outline:3px solid #e94560;outline-offset:-3px}
-.vcard-thumb{position:relative;width:100%;padding-top:56.25%;background:#0f3460}
-.vcard-thumb img{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover}
+.vcard-thumb{position:relative;width:220px;height:124px;background:#0f3460;overflow:hidden}
+.vcard-thumb img{width:100%;height:100%;object-fit:cover;display:block}
 .vcard-dur{position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,.8);color:#fff;font-size:.7em;padding:2px 6px;border-radius:4px}
 .vcard-play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;background:rgba(233,69,96,.9);border-radius:50%;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s}
 .vcard:hover .vcard-play{opacity:1}
+@media(pointer:coarse){.vcard-play{opacity:.7}}
 .vcard-info{padding:8px 10px}
-.vcard-title{font-size:.8em;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.vcard-title{font-size:.78em;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .vcard-cat{font-size:.65em;color:#888;margin-top:3px}
 .vcard.playing .vcard-cat{color:#fcc}
 
@@ -72,21 +81,24 @@ header .info{font-size:.8em;color:#999}
   .now-playing{font-size:.7em}
   header{padding:6px 12px}
   header h1{font-size:1em}
-  .browse-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;padding:8px 10px}
 }
 @media(max-width:600px){
-  .browse-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;padding:6px 8px}
   .browse-header{padding:10px 12px;gap:8px}
   .browse-header h2{display:none}
   .browse-groups{padding:8px 12px;gap:5px}
   .browse-pill{font-size:.75em;padding:5px 12px}
+  .vcard{width:160px}
+  .vcard-thumb{width:160px;height:90px}
+  .cat-row-scroll{gap:8px;padding:0 12px 6px}
+  .cat-row-title{padding:0 12px 6px;font-size:.85em}
 }
 @media(max-width:380px){
   .controls button{width:28px;height:28px}
   .controls button svg{width:12px;height:12px}
   .controls{gap:2px;padding:4px 6px}
   .now-playing{display:none}
-  .browse-grid{grid-template-columns:repeat(2,1fr);gap:6px}
+  .vcard{width:140px}
+  .vcard-thumb{width:140px;height:79px}
 }
 /* ── Landscape ── */
 @media(max-width:1200px) and (orientation:landscape){
@@ -97,7 +109,6 @@ header .info{font-size:.8em;color:#999}
   .controls button{width:28px;height:28px}
   .controls button svg{width:12px;height:12px}
   .now-playing{font-size:.65em}
-  .browse-grid{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
 }
 /* ── Mobile fake fullscreen ── */
 .mobile-fs .player-area{position:fixed!important;top:0;left:0;right:0;bottom:0;z-index:9999}
@@ -154,7 +165,7 @@ header .info{font-size:.8em;color:#999}
   </div>
   <div class="browse-groups" id="groupPills"></div>
   <div class="browse-count" id="countBar"></div>
-  <div class="browse-grid" id="videoGrid"></div>
+  <div class="browse-rows" id="videoRows"></div>
 </div>
 
 <script>
@@ -257,14 +268,32 @@ function filterList(){
 }
 
 function renderGrid(){
-  const el=document.getElementById('videoGrid');
+  const el=document.getElementById('videoRows');
   el.innerHTML='';
+  // Group by category, preserving playlist order
+  const cats=[];
+  const catMap={};
   playlist.forEach((v,i)=>{
-    const card=document.createElement('div');
-    card.className='vcard'+(i===currentIdx?' playing':'');
-    card.innerHTML=`<div class="vcard-thumb"><img src="${thumb(v.id)}" alt="" loading="lazy"><span class="vcard-dur">${v.dur}m</span><div class="vcard-play"><svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg></div></div><div class="vcard-info"><div class="vcard-title">${esc(v.title)}</div><div class="vcard-cat">${esc(v.cat)}</div></div>`;
-    card.onclick=()=>playIndex(i);
-    el.appendChild(card)
+    const c=v.cat||'Other';
+    if(!catMap[c]){catMap[c]=[];cats.push(c)}
+    catMap[c].push({v,i})
+  });
+  cats.forEach(cat=>{
+    const row=document.createElement('div');
+    row.className='cat-row';
+    const items=catMap[cat];
+    row.innerHTML=`<div class="cat-row-title">${esc(cat)}<span class="cat-row-count">(${items.length})</span></div>`;
+    const scroll=document.createElement('div');
+    scroll.className='cat-row-scroll';
+    items.forEach(({v,i})=>{
+      const card=document.createElement('div');
+      card.className='vcard'+(i===currentIdx?' playing':'');
+      card.innerHTML=`<div class="vcard-thumb"><img src="${thumb(v.id)}" alt="" loading="lazy"><span class="vcard-dur">${v.dur}m</span><div class="vcard-play"><svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg></div></div><div class="vcard-info"><div class="vcard-title">${esc(v.title)}</div></div>`;
+      card.onclick=()=>playIndex(i);
+      scroll.appendChild(card)
+    });
+    row.appendChild(scroll);
+    el.appendChild(row)
   })
 }
 

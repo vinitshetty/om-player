@@ -360,13 +360,17 @@ function onFsChange(){
 document.addEventListener('fullscreenchange',onFsChange);
 document.addEventListener('webkitfullscreenchange',onFsChange);
 
-// Add sandbox to iframe after YouTube API creates it — blocks popups and navigation
-function sandboxIframe(){
-  const iframe=document.querySelector('.video-wrap iframe');
-  if(iframe&&!iframe.hasAttribute('sandbox')){
-    iframe.setAttribute('sandbox','allow-scripts allow-same-origin allow-presentation');
+// Block any new tabs/windows from opening
+window.open=function(){return null};
+
+// Watch for iframe creation and sandbox it immediately
+new MutationObserver((mutations)=>{
+  for(const m of mutations)for(const node of m.addedNodes){
+    if(node.tagName==='IFRAME'){
+      node.setAttribute('sandbox','allow-scripts allow-same-origin allow-presentation');
+    }
   }
-}
+}).observe(document.getElementById('videoWrap'),{childList:true,subtree:true});
 
 function onYouTubeIframeAPIReady(){
   player=new YT.Player('playerTarget',{
@@ -382,7 +386,6 @@ function onYouTubeIframeAPIReady(){
       onReady:()=>{
         document.getElementById('nowPlaying').textContent=playlist[0].title;
         document.getElementById('fsTitle').textContent=playlist[0].title;
-        sandboxIframe();
       },
       onStateChange:(e)=>{
         if(e.data===YT.PlayerState.ENDED){updatePlayIcons(false);if(autoplay)playNext()}

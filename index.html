@@ -43,6 +43,7 @@ header .browse-btn:hover{background:#c73652}
 .browse-pill{font-size:.8em;padding:6px 16px;border-radius:18px;border:1.5px solid #0f3460;background:transparent;color:#aaa;cursor:pointer;transition:all .2s}
 .browse-pill:hover{border-color:#e94560;color:#fff}
 .browse-pill.active{background:#e94560;border-color:#e94560;color:#fff}
+.browse-pill.grade-pill{font-size:.75em;padding:5px 12px}
 .browse-count{padding:6px 16px;font-size:.75em;color:#888;flex-shrink:0}
 .browse-rows{flex:1;overflow-y:auto;padding:8px 0}
 .browse-rows::-webkit-scrollbar{width:6px}
@@ -70,6 +71,18 @@ header .browse-btn:hover{background:#c73652}
 .vcard-title{font-size:.78em;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .vcard-cat{font-size:.65em;color:#888;margin-top:3px}
 .vcard.playing .vcard-cat{color:#fcc}
+/* Watched state */
+.vcard.watched .vcard-thumb img{opacity:.6}
+.vcard-check{position:absolute;top:6px;right:6px;width:22px;height:22px;background:rgba(39,174,96,.9);border-radius:50%;display:none;align-items:center;justify-content:center}
+.vcard.watched .vcard-check{display:flex}
+/* Level header */
+.level-header{padding:14px 16px 6px;display:flex;align-items:center;gap:10px}
+.level-badge{font-size:.75em;font-weight:700;color:#1a1a2e;background:#e94560;padding:3px 10px;border-radius:10px;white-space:nowrap}
+.level-title{font-size:.85em;color:#aaa;font-weight:400}
+.level-watched{font-size:.7em;color:#555;margin-left:auto}
+/* Continue row */
+.continue-row{background:linear-gradient(135deg,#16213e,#0f3460);margin:0 0 12px;padding:10px 0;border-bottom:2px solid #0f3460}
+.continue-label{font-size:.85em;font-weight:600;color:#27ae60;padding:0 16px 8px;display:flex;align-items:center;gap:6px}
 /* Fullscreen overlay controls */
 .fs-controls{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:2147483647;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);border-radius:28px;padding:8px 16px;gap:10px;align-items:center;display:flex;opacity:0;pointer-events:none;transition:opacity .3s}
 .fs-controls.visible{opacity:1;pointer-events:auto}
@@ -94,6 +107,7 @@ header .browse-btn:hover{background:#c73652}
   .vcard-thumb{width:160px;height:90px}
   .cat-row-scroll{gap:8px;padding:0 12px 6px}
   .cat-row-title{padding:0 12px 6px;font-size:.85em}
+  .level-header{padding:10px 12px 4px}
 }
 @media(max-width:380px){
   .controls button{width:28px;height:28px}
@@ -110,6 +124,10 @@ header .browse-btn:hover{background:#c73652}
   .controls button{width:28px;height:28px}
   .controls button svg{width:12px;height:12px}
   .now-playing{font-size:.65em}
+  .level-header{padding:8px 12px 2px}
+  .level-badge{font-size:.7em;padding:2px 8px}
+  .continue-row{margin:0 0 8px;padding:6px 0}
+  .continue-label{font-size:.75em;padding:0 12px 4px}
 }
 /* ── Mobile fake fullscreen ── */
 .mobile-fs .player-area{position:fixed!important;top:0;left:0;right:0;bottom:0;z-index:9999}
@@ -152,6 +170,7 @@ header .browse-btn:hover{background:#c73652}
         <button onclick="shuffle()" id="shuffleBtn" title="Shuffle"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg></button>
         <button onclick="toggleAutoplay()" id="autoBtn" class="active text-btn" title="Auto-play">Auto</button>
         <button onclick="toggleBrowse()" id="browseBtn" title="Browse Videos"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/></svg></button>
+        <button onclick="goFullscreen()" title="Fullscreen"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></button>
         <div class="now-playing" id="nowPlaying"></div>
       </div>
       <div class="fs-controls" id="fsControls">
@@ -183,6 +202,7 @@ header .browse-btn:hover{background:#c73652}
 <script>
 const CACHE_KEY='om_videos_cache';
 const CACHE_TTL=24*60*60*1000; // 24 hours
+const WATCHED_KEY='om_watched';
 
 let VIDEOS=[];
 let playlist=[];
@@ -192,6 +212,12 @@ let autoplay=true;
 let shuffled=false;
 let player;
 let activeGroup='';
+let activeGrade='';
+
+// ── Watched tracking ──
+function getWatched(){try{return JSON.parse(localStorage.getItem(WATCHED_KEY)||'{}')}catch(e){return{}}}
+function markWatched(id){const w=getWatched();w[id]=Date.now();localStorage.setItem(WATCHED_KEY,JSON.stringify(w))}
+function isWatched(id){return!!getWatched()[id]}
 
 function loadVideos(){
   // Try cache first for instant load
@@ -252,13 +278,14 @@ function init(){
 function thumb(id){return 'https://img.youtube.com/vi/'+id+'/mqdefault.jpg'}
 
 function initGroups(){
-  const groups=[...new Set(VIDEOS.map(v=>v.group||'Other'))];
+  const groups=[...new Set(VIDEOS.map(v=>v.group||'Other'))].sort();
   const el=document.getElementById('groupPills');
   el.innerHTML='';
+  // Group pills
   const allPill=document.createElement('span');
   allPill.className='browse-pill active';
   allPill.textContent='All';
-  allPill.onclick=()=>{activeGroup='';el.querySelectorAll('.browse-pill').forEach(p=>p.classList.remove('active'));allPill.classList.add('active');filterList()};
+  allPill.onclick=()=>{activeGroup='';activeGrade='';el.querySelectorAll('.browse-pill').forEach(p=>p.classList.remove('active'));allPill.classList.add('active');filterList()};
   el.appendChild(allPill);
   groups.forEach(g=>{
     const p=document.createElement('span');
@@ -271,13 +298,36 @@ function initGroups(){
       filterList()
     };
     el.appendChild(p)
-  })
+  });
+  // Grade pills
+  const grades=[...new Set(VIDEOS.map(v=>v.grade).filter(Boolean))];
+  if(grades.length>1){
+    const order=['Pre-K','K','1st','2nd','3rd','4th','Mixed'];
+    grades.sort((a,b)=>(order.indexOf(a)===-1?99:order.indexOf(a))-(order.indexOf(b)===-1?99:order.indexOf(b)));
+    const sep=document.createElement('span');
+    sep.style.cssText='width:1px;height:20px;background:#0f3460;margin:0 4px';
+    el.appendChild(sep);
+    grades.forEach(g=>{
+      const p=document.createElement('span');
+      p.className='browse-pill grade-pill';
+      p.textContent=g;
+      p.onclick=()=>{
+        activeGrade=activeGrade===g?'':g;
+        // Only deactivate grade pills
+        grades.forEach(gr=>{el.querySelectorAll('.browse-pill').forEach(x=>{if(x.textContent===gr)x.classList.remove('active')})});
+        if(activeGrade)p.classList.add('active');
+        filterList()
+      };
+      el.appendChild(p)
+    })
+  }
 }
 
 function filterList(keepIdx){
   const q=document.getElementById('searchInput').value.toLowerCase();
   playlist=VIDEOS.filter(v=>{
     if(activeGroup&&(v.group||'Other')!==activeGroup)return false;
+    if(activeGrade&&(v.grade||'')!==activeGrade)return false;
     if(q&&!v.title.toLowerCase().includes(q)&&!v.cat.toLowerCase().includes(q)&&!(v.group||'').toLowerCase().includes(q))return false;
     return true
   });
@@ -287,34 +337,95 @@ function filterList(keepIdx){
   document.getElementById('headerInfo').textContent='Browse '+VIDEOS.length+' videos'
 }
 
+function makeCard(v,i){
+  const w=isWatched(v.id);
+  const card=document.createElement('div');
+  card.className='vcard'+(i===currentIdx?' playing':'')+(w?' watched':'');
+  card.innerHTML=`<div class="vcard-thumb"><img src="${thumb(v.id)}" alt="" loading="lazy"><span class="vcard-dur">${v.dur}m</span><div class="vcard-check"><svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div><div class="vcard-play"><svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg></div></div><div class="vcard-info"><div class="vcard-title">${esc(v.title)}</div></div>`;
+  card.onclick=()=>playIndex(i);
+  return card;
+}
+
 function renderGrid(){
   const el=document.getElementById('videoRows');
   el.innerHTML='';
-  const cats=[];
-  const catMap={};
-  playlist.forEach((v,i)=>{
-    const c=v.cat||'Other';
-    if(!catMap[c]){catMap[c]=[];cats.push(c)}
-    catMap[c].push({v,i})
-  });
+  const watched=getWatched();
+  const hasLevels=playlist.some(v=>v.level);
   const frag=document.createDocumentFragment();
-  cats.forEach(cat=>{
-    const row=document.createElement('div');
-    row.className='cat-row';
-    const items=catMap[cat];
-    row.innerHTML=`<div class="cat-row-title">${esc(cat)}<span class="cat-row-count">(${items.length})</span></div>`;
+
+  // Continue row — last watched + next unwatched
+  const lastId=Object.keys(watched).sort((a,b)=>watched[b]-watched[a])[0];
+  const nextUnwatched=playlist.filter(v=>!watched[v.id]).slice(0,8);
+  if(lastId||nextUnwatched.length){
+    const cRow=document.createElement('div');
+    cRow.className='continue-row';
+    cRow.innerHTML='<div class="continue-label"><svg width="16" height="16" viewBox="0 0 24 24" fill="#27ae60"><path d="M8 5v14l11-7z"/></svg> Up Next</div>';
     const scroll=document.createElement('div');
     scroll.className='cat-row-scroll';
-    items.forEach(({v,i})=>{
-      const card=document.createElement('div');
-      card.className='vcard'+(i===currentIdx?' playing':'');
-      card.innerHTML=`<div class="vcard-thumb"><img src="${thumb(v.id)}" alt="" loading="lazy"><span class="vcard-dur">${v.dur}m</span><div class="vcard-play"><svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg></div></div><div class="vcard-info"><div class="vcard-title">${esc(v.title)}</div></div>`;
-      card.onclick=()=>playIndex(i);
-      scroll.appendChild(card);
+    // Add last watched first if it's in current playlist
+    const lastIdx=playlist.findIndex(v=>v.id===lastId);
+    if(lastIdx>=0)scroll.appendChild(makeCard(playlist[lastIdx],lastIdx));
+    nextUnwatched.forEach(v=>{
+      const idx=playlist.indexOf(v);
+      if(idx>=0&&v.id!==lastId)scroll.appendChild(makeCard(v,idx));
     });
-    row.appendChild(scroll);
-    frag.appendChild(row);
-  });
+    if(scroll.children.length){cRow.appendChild(scroll);frag.appendChild(cRow)}
+  }
+
+  if(hasLevels&&!document.getElementById('searchInput').value){
+    // Group by level, then category within each level
+    const levels={};
+    playlist.forEach((v,i)=>{
+      const lv=v.level||0;
+      if(!levels[lv])levels[lv]={};
+      const c=v.cat||'Other';
+      if(!levels[lv][c])levels[lv][c]=[];
+      levels[lv][c].push({v,i});
+    });
+    const sortedLevels=Object.keys(levels).map(Number).sort((a,b)=>a-b);
+    sortedLevels.forEach(lv=>{
+      const cats=levels[lv];
+      const catNames=Object.keys(cats);
+      const allItems=catNames.flatMap(c=>cats[c]);
+      const watchedCount=allItems.filter(({v})=>watched[v.id]).length;
+      // Level header
+      const header=document.createElement('div');
+      header.className='level-header';
+      header.innerHTML=`<span class="level-badge">Level ${lv}</span><span class="level-watched">${watchedCount}/${allItems.length} watched</span>`;
+      frag.appendChild(header);
+      // Category rows within this level
+      catNames.forEach(cat=>{
+        const items=cats[cat];
+        const row=document.createElement('div');
+        row.className='cat-row';
+        row.innerHTML=`<div class="cat-row-title">${esc(cat)}<span class="cat-row-count">(${items.length})</span></div>`;
+        const scroll=document.createElement('div');
+        scroll.className='cat-row-scroll';
+        items.forEach(({v,i})=>scroll.appendChild(makeCard(v,i)));
+        row.appendChild(scroll);
+        frag.appendChild(row);
+      });
+    });
+  }else{
+    // Flat mode (search results or no levels)
+    const cats=[];const catMap={};
+    playlist.forEach((v,i)=>{
+      const c=v.cat||'Other';
+      if(!catMap[c]){catMap[c]=[];cats.push(c)}
+      catMap[c].push({v,i})
+    });
+    cats.forEach(cat=>{
+      const row=document.createElement('div');
+      row.className='cat-row';
+      const items=catMap[cat];
+      row.innerHTML=`<div class="cat-row-title">${esc(cat)}<span class="cat-row-count">(${items.length})</span></div>`;
+      const scroll=document.createElement('div');
+      scroll.className='cat-row-scroll';
+      items.forEach(({v,i})=>scroll.appendChild(makeCard(v,i)));
+      row.appendChild(scroll);
+      frag.appendChild(row);
+    });
+  }
   el.appendChild(frag);
 }
 
@@ -378,7 +489,6 @@ function shuffle(){
 
 function toggleBrowse(){
   document.getElementById('browse').classList.toggle('open');
-  showBars();
 }
 
 let mobileFs=false;
@@ -393,8 +503,6 @@ function goFullscreen(){
     clearTimeout(mobileControlsTimeout);
     mobileControlsTimeout=setTimeout(()=>ctrl.classList.remove('show-controls'),3000);
     try{screen.orientation.lock('landscape').catch(()=>{})}catch(e){}
-    document.getElementById('fsBtn').style.display='none';
-    document.getElementById('exitFsBtn').style.display='';
     document.querySelector('.player-area').addEventListener('touchstart',showMobileControls);
     document.querySelector('.player-area').addEventListener('mousemove',showMobileControls);
     return;
@@ -411,8 +519,6 @@ function exitFullscreen(){
     document.querySelector('.controls').classList.remove('show-controls');
     document.querySelector('.player-area').removeEventListener('touchstart',showMobileControls);
     document.querySelector('.player-area').removeEventListener('mousemove',showMobileControls);
-    document.getElementById('fsBtn').style.display='';
-    document.getElementById('exitFsBtn').style.display='none';
     try{screen.orientation.unlock()}catch(e){}
     return;
   }
@@ -439,8 +545,6 @@ function showFsControls(){
 function onFsChange(){
   const isFs=!!document.fullscreenElement||!!document.webkitFullscreenElement;
   const fc=document.getElementById('fsControls');
-  document.getElementById('fsBtn').style.display=isFs?'none':'';
-  document.getElementById('exitFsBtn').style.display=isFs?'':'none';
   if(isFs){
     showFsControls();
     document.querySelector('.player-area').addEventListener('mousemove',showFsControls);
@@ -482,7 +586,7 @@ function onYouTubeIframeAPIReady(){
         document.getElementById('fsTitle').textContent=playlist[currentIdx].title;
       },
       onStateChange:(e)=>{
-        if(e.data===YT.PlayerState.ENDED){updatePlayIcons(false);stopWatchTimer();if(autoplay)playNext()}
+        if(e.data===YT.PlayerState.ENDED){updatePlayIcons(false);stopWatchTimer();markWatched(playlist[currentIdx].id);if(autoplay)playNext()}
         else if(e.data===YT.PlayerState.PLAYING){updatePlayIcons(true);startWatchTimer()}
         else if(e.data===YT.PlayerState.PAUSED){updatePlayIcons(false);stopWatchTimer()}
       }

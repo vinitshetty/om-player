@@ -146,6 +146,9 @@ header .browse-btn:hover{background:#c73652}
 .watch-time{position:fixed;bottom:12px;right:12px;background:rgba(22,33,62,.85);backdrop-filter:blur(6px);color:#ccc;font-size:.75em;padding:5px 12px;border-radius:12px;z-index:50;pointer-events:none}
 .watch-time span{color:#e94560;font-weight:600}
 .mobile-fs .watch-time{display:none}
+/* ── Block YouTube clickable areas ── */
+.yt-block-top{position:absolute;top:0;left:0;right:0;height:42px;z-index:5;cursor:default}
+.yt-block-logo{position:absolute;bottom:0;right:0;width:120px;height:36px;z-index:5;cursor:default}
 </style>
 </head>
 <body>
@@ -161,6 +164,8 @@ header .browse-btn:hover{background:#c73652}
     <div class="player-area">
       <div class="video-wrap" id="videoWrap">
         <div id="playerTarget"></div>
+        <div class="yt-block-top"></div>
+        <div class="yt-block-logo"></div>
       </div>
       <div class="fs-tap" id="fsTap" onclick="showMobileControls()"></div>
       <div class="controls">
@@ -557,10 +562,10 @@ function onFsChange(){
 document.addEventListener('fullscreenchange',onFsChange);
 document.addEventListener('webkitfullscreenchange',onFsChange);
 
-// Block any new tabs/windows from opening
+// ── Kid-safe: block escaping to YouTube ──
 window.open=function(){return null};
 
-// Watch for iframe creation and sandbox it immediately
+// Sandbox iframes: no popups, no top-navigation
 new MutationObserver((mutations)=>{
   for(const m of mutations)for(const node of m.addedNodes){
     if(node.tagName==='IFRAME'){
@@ -568,6 +573,14 @@ new MutationObserver((mutations)=>{
     }
   }
 }).observe(document.getElementById('videoWrap'),{childList:true,subtree:true});
+
+// Block page navigation away
+window.addEventListener('beforeunload',e=>{e.preventDefault();e.returnValue=''});
+
+// Block Ctrl/Cmd+T (new tab), Ctrl/Cmd+N (new window), Ctrl/Cmd+L (address bar)
+document.addEventListener('keydown',e=>{
+  if((e.ctrlKey||e.metaKey)&&['t','n','l','w'].includes(e.key.toLowerCase())){e.preventDefault()}
+});
 
 function onYouTubeIframeAPIReady(){
   player=new YT.Player('playerTarget',{
